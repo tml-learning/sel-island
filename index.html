@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>天空之心・漚汪 SEL 探索群島 ｜ 3D 浮空島 (原生 HTML 版)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Three.js & Controls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Tween.js for smooth camera transitions -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      height: 100dvh;
+    }
+    #webgl-canvas {
+      width: 100vw;
+      height: 100dvh;
+      display: block;
+      touch-action: none;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.04);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.25);
+      border-radius: 3px;
+    }
+    /* 響應式隱藏滾動條（保留滑動功能但隱藏醜陋捲軸） */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes pulse-slow {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.88; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 3s infinite ease-in-out;
+    }
+    @keyframes breathe-circle {
+      0% { transform: scale(0.62); opacity: 0.55; }
+      25% { transform: scale(1.18); opacity: 1; }
+      60% { transform: scale(1.18); opacity: 0.92; }
+      100% { transform: scale(0.62); opacity: 0.55; }
+    }
+    .breathe-active {
+      animation: breathe-circle 12s infinite ease-in-out;
+    }
+    .island-3d-label {
+      pointer-events: auto;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .island-3d-label:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+    .landmark-3d-label {
+      pointer-events: auto;
+      transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .landmark-3d-label:hover {
+      transform: translate(-50%, -100%) scale(1.08);
+      z-index: 40;
+    }
+  </style>
+</head>
+<body class="bg-slate-800 text-slate-800 antialiased h-[100dvh] w-screen overflow-hidden">
+
+  <!-- 3D WebGL Canvas -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- 3D Floating HTML Labels Overlay Container -->
+  <div id="labels-3d-container" class="fixed inset-0 pointer-events-none overflow-hidden z-10"></div>
+
+  <!-- Top Navigation & Status Bar -->
+  <header class="absolute top-0 left-0 right-0 pt-[max(env(safe-area-inset-top),0.5rem)] px-2 pb-2 sm:p-3 flex pointer-events-none z-20 w-full overflow-hidden">
+    
+    <!-- Unified Top Row: Brand & All Tools (Forced Single Row) -->
+    <div class="flex flex-row items-center gap-2 sm:gap-3 w-full max-w-full">
+      <!-- Brand & Title -->
+      <div class="bg-white/90 backdrop-blur-md px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl shadow-lg border border-amber-100/80 pointer-events-auto flex items-center space-x-2 sm:space-x-3 transition hover:shadow-xl shrink-0 z-10">
+        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-400 to-sky-400 flex items-center justify-center text-white font-black text-sm sm:text-base shadow-md shadow-amber-200 flex-shrink-0">
+          🏝️
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5 flex-nowrap">
+            <h1 class="text-xs sm:text-base font-black text-slate-900 tracking-tight truncate">
+              天空之心・漚汪 SEL 探索群島
+            </h1>
+            <span class="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold border border-amber-200 whitespace-nowrap hidden lg:inline-block">
+              Diorama Toy Model
+            </span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-500 hidden sm:block truncate">
+            「漚汪國小 SEL 學習網」5大架構及 30 個螺旋課程
+          </p>
+        </div>
+      </div>
+
+      <!-- Quick Tool Group (Scrollable horizontally on all screens if it exceeds width) -->
+      <div class="flex items-center gap-1.5 sm:gap-2 pointer-events-auto overflow-x-auto no-scrollbar flex-1 snap-x h-full py-1">
+        
+        <!-- Island Navigation -->
+        <div class="bg-white/90 backdrop-blur-md p-1 rounded-2xl shadow-lg border border-white/60 flex items-center space-x-1 shrink-0 snap-start">
+          <button class="nav-island-btn px-2 sm:px-3 py-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition bg-indigo-600 text-white shadow-sm whitespace-nowrap" data-island="all">
+            🌐 全群島
+          </button>
+          <button class="nav-island-btn px-2 sm:px-3 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap" data-island="inner_lake">
+            🏰 天空之心<span class="hidden sm:inline">（總島）</span>
+          </button>
+        </div>
+
+        <!-- Lighting / Time of day buttons -->
+        <div class="bg-white/90 backdrop-blur-md p-1 rounded-2xl shadow-lg border border-white/60 flex items-center space-x-1 text-xs font-semibold shrink-0 snap-start">
+          <button id="btn-time-day" class="px-2.5 py-1.5 rounded-xl bg-amber-100 text-amber-800 transition hover:bg-amber-200 flex items-center gap-1 shadow-sm" title="舒適鈷藍晴空">
+            <span>☀️</span><span class="hidden md:inline">晴天</span>
+          </button>
+          <button id="btn-time-sunset" class="px-2.5 py-1.5 rounded-xl text-slate-600 hover:bg-orange-100 hover:text-orange-800 transition flex items-center gap-1" title="溫潤暮紫晚霞">
+            <span>🌅</span><span class="hidden md:inline">黃昏</span>
+          </button>
+          <button id="btn-time-night" class="px-2.5 py-1.5 rounded-xl text-slate-600 hover:bg-indigo-100 hover:text-indigo-800 transition flex items-center gap-1" title="靜謐深藍星夜">
+            <span>🌙</span><span class="hidden md:inline">星夜</span>
+          </button>
+        </div>
+
+        <!-- Avatar Customization -->
+        <div id="avatar-hud-card" class="bg-white/90 backdrop-blur-md px-2.5 py-1.5 rounded-2xl shadow-lg border border-white/60 flex items-center gap-2 cursor-pointer hover:border-amber-300 transition shrink-0 snap-start" title="點擊切換天空旅人身分與 3D 定裝">
+          <div id="avatar-icon-badge" class="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-xs shadow-md">🎒</div>
+          <div class="flex flex-col text-left">
+            <span class="text-[9px] font-bold text-slate-500 leading-none mb-0.5">天空旅人</span>
+            <span id="avatar-role-label" class="text-[10px] text-amber-800 font-bold leading-none">自主探索者</span>
+          </div>
+        </div>
+
+        <!-- Resonance Lines -->
+        <div class="bg-white/90 backdrop-blur-md px-2 py-1.5 rounded-2xl shadow-lg border border-white/60 flex items-center gap-1.5 shrink-0 text-[10px] sm:text-xs snap-start">
+          <span class="text-slate-500 font-semibold hidden 2xl:inline">🌈 航線:</span>
+          <button id="btn-toggle-lines" class="px-2 py-1 rounded-xl bg-amber-100 text-amber-900 font-bold transition hover:bg-amber-200 whitespace-nowrap">全顯</button>
+          <button id="btn-line-focus-only" class="px-2 py-1 rounded-xl bg-slate-100 text-slate-600 font-medium transition hover:bg-slate-200 whitespace-nowrap">聚焦</button>
+        </div>
+
+        <!-- Medal Progress -->
+        <div id="btn-medal-modal" class="bg-white/90 backdrop-blur-md px-2.5 py-1.5 rounded-2xl shadow-lg border border-white/60 flex items-center gap-2 cursor-pointer hover:border-amber-300 transition shrink-0 snap-start" title="點擊查看所有 SEL 獎章與美德">
+          <div class="flex flex-col text-left">
+            <span class="text-[9px] font-bold text-slate-500 leading-none mb-1">集章進度</span>
+            <div class="flex items-center gap-1.5">
+              <span id="progress-text" class="text-[11px] font-black text-amber-600 leading-none">0 / 30</span>
+              <div class="w-16 bg-slate-200 h-1.5 rounded-full overflow-hidden hidden 2xl:block">
+                <div id="progress-bar-fill" class="bg-gradient-to-r from-amber-400 via-orange-500 to-indigo-600 h-full w-0 transition-all duration-500"></div>
+              </div>
+            </div>
+          </div>
+          <div class="w-7 h-7 bg-amber-50 text-amber-600 rounded-full border border-amber-200 shadow-sm flex items-center justify-center text-sm shrink-0">🏆</div>
+        </div>
+
+        <!-- Reset Camera Button -->
+        <button id="btn-reset-cam" class="bg-white/90 hover:bg-white text-slate-700 p-2 sm:p-2.5 rounded-2xl shadow-lg border border-white/60 transition hover:scale-105 active:scale-95 shrink-0 snap-start" title="全景重置">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        </button>
+
+        <!-- Audio Ambience Toggle -->
+        <button id="btn-audio-toggle" class="bg-white/90 hover:bg-white text-slate-700 p-2 sm:p-2.5 rounded-2xl shadow-lg border border-white/60 transition hover:scale-105 active:scale-95 shrink-0 snap-start" title="天空風鈴音效">
+          <span id="audio-icon">🔇</span>
+        </button>
+      </div>
+    </div>
+
+  </header>
+
+  <!-- Left Collapsible Course & Facility Directory Panel -->
+  <aside id="course-directory-panel" class="fixed top-[110px] xl:top-[88px] left-2 sm:left-4 bottom-[max(env(safe-area-inset-bottom),1rem)] w-[92vw] sm:w-80 max-w-sm bg-white/92 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/80 z-20 flex flex-col pointer-events-auto transition-transform duration-300 -translate-x-[120%]">
+    <div class="p-3.5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-amber-50/70 to-sky-50/70 rounded-t-3xl">
+      <div>
+        <h3 class="text-xs font-black text-slate-800 flex items-center gap-1.5">
+          <span>☁️</span> 漚汪 SKY 天空之心課程導覽
+        </h3>
+        <p class="text-[10px] text-slate-500">點選任一年級基地，鏡頭即刻飛往該浮島</p>
+      </div>
+      <button id="btn-close-directory" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-white/60 text-xs">
+        ◀ 收合
+      </button>
+    </div>
+
+    <!-- Grade Level Filter Tabs -->
+    <div class="px-3 pt-2.5 pb-1.5 flex items-center gap-1 border-b border-slate-100 text-[11px] font-bold shadow-sm">
+      <button class="grade-filter-btn flex-1 py-1 rounded-lg bg-amber-500 text-white shadow-sm transition" data-grade="all">全部(30)</button>
+      <button class="grade-filter-btn flex-1 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition" data-grade="low">低年級(1-2)</button>
+      <button class="grade-filter-btn flex-1 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition" data-grade="mid">中年級(3-4)</button>
+      <button class="grade-filter-btn flex-1 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition" data-grade="high">高年級(5-6)</button>
+    </div>
+
+    <!-- Scrollable 5 Architectures x 6 Grades Tree List -->
+    <div id="directory-list-container" class="flex-1 overflow-y-auto p-2.5 space-y-2.5">
+      <!-- Dynamically populated with the 5 architectures and 30 OWES SEL subpages -->
+    </div>
+  </aside>
+
+  <!-- Right Slide-over Detail Drawer -->
+  <div id="landmark-drawer" class="fixed inset-y-0 right-0 w-[92vw] sm:w-[430px] bg-white/95 backdrop-blur-xl shadow-2xl border-l border-white/60 transform translate-x-full transition-transform duration-300 ease-out z-30 flex flex-col pointer-events-auto overflow-hidden">
+    <!-- Drawer Header -->
+    <div class="p-4 pt-[max(env(safe-area-inset-top),1rem)] border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-amber-50/60 via-white to-sky-50/60">
+      <div class="flex items-center space-x-2">
+        <span id="drawer-island-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
+          自我覺察
+        </span>
+        <span id="drawer-grade-badge" class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700">
+          一年級
+        </span>
+        <span id="drawer-id-badge" class="text-[10px] text-slate-400 font-mono">NODE 01</span>
+      </div>
+      <button id="btn-close-drawer" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition">
+        ✕
+      </button>
+    </div>
+
+    <!-- Drawer Content Scrollable Area -->
+    <div class="flex-1 overflow-y-auto p-5 space-y-4">
+      <!-- Title & Icon -->
+      <div class="flex items-start space-x-3.5">
+        <div id="drawer-icon" class="w-13 h-13 p-3 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-2xl shadow-inner flex-shrink-0 border border-amber-200/60">
+          🌤️
+        </div>
+        <div class="flex-1 min-w-0">
+          <h2 id="drawer-title" class="text-lg font-black text-slate-900 leading-tight">一年級-情緒報到</h2>
+          <p id="drawer-subtitle" class="text-xs text-slate-500 mt-0.5">浮空島微縮地標：晨曦情緒氣象台</p>
+        </div>
+      </div>
+
+      <!-- Direct Official OWES SEL Subpage Action Card -->
+      <div class="bg-gradient-to-r from-indigo-600 to-sky-600 p-3.5 rounded-2xl text-white shadow-md flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div class="text-[10px] uppercase tracking-wider font-bold text-sky-100">漚汪國小 SEL 學習網官方教材</div>
+          <div id="drawer-url-title" class="text-xs font-bold truncate mt-0.5">開啟 Google Sites 完整教學專頁</div>
+        </div>
+        <a id="drawer-external-link" href="https://sites.google.com/owes.tn.edu.tw/owsel" target="_blank" rel="noopener noreferrer"
+           class="px-3 py-2 rounded-xl bg-white text-indigo-700 hover:bg-amber-50 font-black text-xs whitespace-nowrap shadow-sm transition flex items-center gap-1 flex-shrink-0">
+          <span>前往網頁</span><span>↗</span>
+        </a>
+      </div>
+
+      <!-- Description Block -->
+      <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-1.5">
+        <h4 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+          <span>🎯</span> 課程核心理念與教學目標
+        </h4>
+        <p id="drawer-desc" class="text-xs text-slate-600 leading-relaxed">
+          透過全校動員問候與反思空間建立支持性環境，協助學生將抽象情緒具體化並進行每日情緒盤點。
+        </p>
+      </div>
+
+      <!-- Instant Dynamic Interactive Experience Area (即時動態展示體驗) -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-black text-amber-900 flex items-center gap-1">
+            <span>🎮</span> 島嶼即時互動體驗模組
+          </h4>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold">Live Interactive</span>
+        </div>
+        <div id="drawer-interactive-widget" class="bg-gradient-to-br from-amber-50/70 via-white to-sky-50/60 p-4 rounded-2xl border border-amber-200/80 shadow-inner">
+          <!-- Dynamically populated interactive module -->
+        </div>
+      </div>
+
+      <!-- Sibling Grade Nodes on Same Floating Island -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold text-slate-700 flex items-center gap-1">
+          <span>🏝️</span> 同島嶼其他年級課程基地（一至六年級）
+        </h4>
+        <div id="drawer-island-siblings" class="grid grid-cols-2 gap-1.5">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Connected Cross-Island Resonance Lines Section -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold text-slate-700 flex items-center gap-1">
+          <span>🌈</span> 跨島能量航線連結
+        </h4>
+        <div id="drawer-connected-lines" class="space-y-1.5">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawer Footer: Complete Check-in Button -->
+    <div class="p-4 pb-[max(env(safe-area-inset-bottom),1rem)] border-t border-slate-100 bg-white flex items-center space-x-2.5">
+      <button id="btn-checkin" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold text-xs shadow-md shadow-amber-200 transition active:scale-95 flex items-center justify-center gap-2">
+        <span>✨</span> <span id="btn-checkin-text">完成此處心靈探索</span>
+      </button>
+      <button id="btn-focus-cam" class="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition" title="拉近聚焦微縮模型">
+        🎯
+      </button>
+    </div>
+  </div>
+
+  <!-- Avatar Customization Modal -->
+  <div id="avatar-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden pt-[max(env(safe-area-inset-top),1rem)] pb-[max(env(safe-area-inset-bottom),1rem)]">
+    <div class="bg-white rounded-3xl max-w-md w-full p-4 sm:p-6 shadow-2xl border border-white/80 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+        <h3 class="text-base font-black text-slate-900 flex items-center gap-1.5">
+          <span>✨</span> 天空旅人身分與 3D 人物定裝
+        </h3>
+        <button id="btn-close-avatar-modal" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <div class="flex items-center gap-4 bg-gradient-to-r from-amber-50 via-white to-sky-50 p-3.5 rounded-2xl border border-amber-200/70">
+        <div id="modal-avatar-preview" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-3xl shadow-lg shadow-orange-200 flex-shrink-0">
+          🎒
+        </div>
+        <div class="space-y-1">
+          <div class="flex items-center gap-1.5">
+            <span id="modal-role-title" class="text-sm font-black text-slate-900">自主探索者</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold">3D 專屬定裝</span>
+          </div>
+          <p id="modal-outfit-detail" class="text-xs text-indigo-700 font-bold">探險橘風衣 ＋ 太陽黃探險帽 ＋ 登山大背包 ＋ 領航望遠鏡</p>
+          <p class="text-[11px] text-slate-500">套用後，3D 浮空島上的主角將立即換上專屬服裝與道具進行各關闖關！</p>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <label class="text-xs font-bold text-slate-700">選擇闖關身分（點選立即預覽定裝）：</label>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <button class="avatar-role-opt p-2.5 rounded-xl border-2 border-indigo-500 bg-indigo-50 text-indigo-900 font-bold text-left transition" data-role="自主探索者" data-icon="🎒">
+            <div>🎒 自主探索者</div>
+            <div class="text-[10px] text-slate-500 font-normal mt-0.5">探險風衣・登山包・望遠鏡</div>
+          </button>
+          <button class="avatar-role-opt p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-left transition" data-role="在學學童" data-icon="🧒">
+            <div>🧒 在學學童</div>
+            <div class="text-[10px] text-slate-500 font-normal mt-0.5">活力藍校服・小黃帽・紅色書包</div>
+          </button>
+          <button class="avatar-role-opt p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-left transition" data-role="教育引導者" data-icon="🧑‍🏫">
+            <div>🧑‍🏫 教育引導者</div>
+            <div class="text-[10px] text-slate-500 font-normal mt-0.5">學者紫禮袍・博士方帽・魔法法杖</div>
+          </button>
+          <button class="avatar-role-opt p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-left transition" data-role="成長家長" data-icon="🌱">
+            <div>🌱 成長家長</div>
+            <div class="text-[10px] text-slate-500 font-normal mt-0.5">森林綠園丁裝・遮陽草帽・愛心手提籃</div>
+          </button>
+        </div>
+      </div>
+      <button id="btn-save-avatar" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-500 hover:to-sky-500 text-white font-bold text-xs shadow-md transition">
+        ✨ 立即換裝並出發闖關
+      </button>
+    </div>
+  </div>
+
+  <!-- Unified Medal/Achievement/Virtue Modal -->
+  <div id="medal-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden pt-[max(env(safe-area-inset-top),1rem)] pb-[max(env(safe-area-inset-bottom),1rem)]">
+    <div class="bg-slate-50 rounded-3xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl border border-white/80 space-y-5 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between pb-2 border-b border-slate-200 sticky top-0 bg-slate-50 z-10 pt-2">
+        <h3 class="text-base font-black text-slate-900 flex items-center gap-1.5">
+          <span>🏆</span> 心靈收藏櫃 (獎章、美德)
+        </h3>
+        <button id="btn-close-medal-modal" class="text-slate-400 hover:text-slate-600 bg-white p-1 rounded-lg">✕</button>
+      </div>
+
+      <!-- 1. 獎章區塊 -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold text-indigo-800 flex items-center gap-1"><span>🏅</span> SEL 探索成就獎章</h4>
+        <div id="medal-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <!-- Dynamically injected via JS -->
+        </div>
+      </div>
+
+      <!-- 2. 美德符文區塊 -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold text-amber-800 flex items-center gap-1"><span>🌟</span> 行善共好：品格美德符文</h4>
+        <p class="text-[10px] text-slate-500">完成特定核心課程，即可點亮浮空島上隱藏的專屬品格石碑。</p>
+        <div id="virtue-grid" class="grid grid-cols-4 sm:grid-cols-8 gap-2">
+          <!-- Dynamically injected via JS -->
+        </div>
+      </div>
+
+      <button id="btn-confirm-medal" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white font-bold text-xs shadow-md transition sticky bottom-0">
+        返回探索
+      </button>
+    </div>
+  </div>
+
+  <!-- Virtue Unlock Modal (手動點擊關閉的美德解鎖視窗) -->
+  <div id="virtue-unlock-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-4 border-amber-200 text-center space-y-4">
+      <div class="text-6xl drop-shadow-md" id="virtue-unlock-icon">🌟</div>
+      <h3 class="text-xl font-black text-amber-600">🌟 品格昇華！</h3>
+      <p class="text-sm font-bold text-slate-800">成功點亮「<span id="virtue-unlock-name" class="text-indigo-600 text-lg mx-1"></span>」美德符文</p>
+      <p id="virtue-unlock-desc" class="text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-100 leading-relaxed"></p>
+      <button id="btn-close-virtue-modal" class="w-full py-2.5 mt-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-sm shadow-md transition active:scale-95">
+        收下美德並繼續探索
+      </button>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast-notify" class="fixed top-20 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white px-4 py-2 rounded-2xl shadow-xl text-xs font-semibold backdrop-blur-md pointer-events-none transition-all duration-300 opacity-0 -translate-y-2 z-50 flex items-center gap-2">
+    <span id="toast-icon">✨</span>
+    <span id="toast-msg">已點亮新地標！</span>
+  </div>
+
+  <!-- Main Application Script -->
+  <script>
+    // =========================================================================
+    // 1. 核心資料庫 (架構、課程、獎章、美德、彩蛋)
+    // =========================================================================
+    const BASE_SITE_URL = 'https://sites.google.com/owes.tn.edu.tw/owsel';
+
+    const ISLAND_CONFIG = {
+      inner_lake: {
+        id: 'inner_lake', name: '天空之心・課程總島', competency: '課程學習架構總覽', heroName: '🏰 浮空聖殿與雲端飛瀑生命樹', floraName: '🌿 雲頂鮮綠草甸、巨木與垂崖長春藤',
+        color: 0x38bdf8, groundColor: 0x4ade80, turfColor: 0x22c55e, cliffColor: 0x92400e, borderHex: '#d97706', pos: { x: 0, y: 3.5, z: 0 }, radius: 9.2, floatSpeed: 1.1, floatPhase: 0,
+        url: 'https://sites.google.com/owes.tn.edu.tw/owsel/%E8%AA%B2%E7%A8%8B%E5%AD%B8%E7%BF%92%E6%9E%B6%E6%A7%8B', desc: '系統化推動國小一至六年級社會情緒學習（SEL），串聯低年級情緒辨識、中年級量化調節與和平圈、高年級思辨協商之螺旋式學習生態系。'
+      },
+      self_awareness: {
+        id: 'self_awareness', name: '澄鏡浮島', competency: '自我覺察 Self-Awareness', heroName: '💎 心靈澄鏡湖與懸浮折射水晶稜鏡塔', floraName: '🌿 水岸翠柳、湖心藍蓮花與冰晶藍鈴花叢',
+        color: 0x38bdf8, groundColor: 0x5eead4, turfColor: 0x10b981, cliffColor: 0x64748b, borderHex: '#0284c7', pos: { x: 0, y: 1.2, z: -26 }, radius: 10.5, floatSpeed: 0.9, floatPhase: 1.2,
+        url: 'https://sites.google.com/owes.tn.edu.tw/owsel/%E8%AA%B2%E7%A8%8B%E5%AD%B8%E7%BF%92%E6%9E%B6%E6%A7%8B', desc: '透過全校動員問候與反思空間建立支持性環境，豐富情緒詞彙並進行情緒盤點，寫日記與識別個人優缺點。'
+      },
+      self_management: {
+        id: 'self_management', name: '定心浮島', competency: '自我管理 Self-Management', heroName: '🌬️ 巨型呼吸大風車磨坊與 90 秒定心金沙漏', floraName: '🌲 蒼翠層疊松柏、靜心翠竹林與圓球綠籬',
+        color: 0x4ade80, groundColor: 0x4ade80, turfColor: 0x16a34a, cliffColor: 0x57534e, borderHex: '#16a34a', pos: { x: -25, y: 2.4, z: -8 }, radius: 10.5, floatSpeed: 1.0, floatPhase: 2.4,
+        url: 'https://sites.google.com/owes.tn.edu.tw/owsel/%E8%AA%B2%E7%A8%8B%E5%AD%B8%E7%BF%92%E6%9E%B6%E6%A7%8B', desc: '運用深呼吸技巧（CBS）控制衝動，建立固定生活規律以降低焦慮，使用感受溫度計與情緒計畫表追蹤變化並分解目標。'
+      },
+      social_awareness: {
+        id: 'social_awareness', name: '共鳴浮島', competency: '社會覺察 Social Awareness', heroName: '🌳 百年共鳴神木樹屋與雙筒雷達觀景台', floraName: '🌸 盛開粉櫻樹林、暖杏玫瑰花圃與懸崖藤蔓',
+        color: 0xfb7185, groundColor: 0x86efac, turfColor: 0x22c55e, cliffColor: 0x78716c, borderHex: '#e11d48', pos: { x: 16, y: 0.8, z: 22 }, radius: 10.5, floatSpeed: 0.85, floatPhase: 3.6,
+        url: 'https://sites.google.com/owes.tn.edu.tw/owsel/%E8%AA%B2%E7%A8%8B%E5%AD%B8%E7%BF%92%E6%9E%B6%E6%A7%8B', desc: '以同理心、觀點取替及尊重他人為核心，解讀非語言表情線索，運用「思考、對談、分享」與多元文化視角理解他人。'
+      },
+      relationship: {
+        id: 'relationship', name: '築橋浮島', competency: '人際關係 Relationship Skills', heroName: '🌉 雙心彩虹木拱橋與和平圈溫暖營火廣場', floraName: '🍁 暖橘秋楓林、向日葵花田與紅果灌木叢',
+        color: 0xfbbf24, groundColor: 0xa3e635, turfColor: 0x4d7c0f, cliffColor: 0x7c2d12, borderHex: '#ea580c', pos: { x: 25, y: 2.8, z: -8 }, radius: 10.5, floatSpeed: 0.95, floatPhase: 4.8,
+        url: 'https://sites.google.com/owes.tn.edu.tw/owsel/%E8%AA%B2%E7%A8%8B%E5%AD%B8%E7%BF%92%E6%9E%B6%E6%A7%8B', desc: '透過合作學習、和平圈、拼圖教學法（Jigsaw）及專題式學習，結合角色扮演與修復式對話，促進團隊互助並和平解決衝突。'
+      },
+      decision: {
+        id: 'decision', name: '航標浮島', competency: '負責任的決策 Responsible Decision-Making', heroName: '⚖️ 黃金正義天平聖殿與三環渾天儀星盤鐘樓', floraName: '🍂 黃金銀杏樹、星光藍紫薰衣草與幾何石陣苔蘚',
+        color: 0x818cf8, groundColor: 0x6ee7b7, turfColor: 0x059669, cliffColor: 0x475569, borderHex: '#4f46e5', pos: { x: -16, y: 1.6, z: 22 }, radius: 10.5, floatSpeed: 1.05, floatPhase: 5.5,
+        url: 'https://sites.google.com/owes.tn.edu.tw/owsel/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E6%80%9D%E8%BE%A8%E8%88%87%E6%B1%BA%E7%AD%96', desc: '基於道德標準、安全與社會規範做出抉擇，涵蓋「發現問題、分析現況、尋求方案、評估選擇、事後反思」五大關鍵步驟。'
+      }
+    };
+
+    function getHexRingPos(islandId, index) {
+      const cfg = ISLAND_CONFIG[islandId];
+      const angle = (index * Math.PI) / 3 - Math.PI / 2;
+      const r = 5.6;
+      return {
+        x: Number((cfg.pos.x + Math.cos(angle) * r).toFixed(2)),
+        y: cfg.pos.y + 1.2,
+        z: Number((cfg.pos.z + Math.sin(angle) * r).toFixed(2))
+      };
+    }
+
+    const LANDMARKS = [
+      { id: 'node_01', islandId: 'self_awareness', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-情緒報到', subtitle: '晨曦情緒氣象台｜深呼吸與情緒辨識', icon: '🌤️', pos: getHexRingPos('self_awareness', 0), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E5%A0%B1%E5%88%B0`, desc: '透過每日晨間情緒報到與顏色情緒標示，將抽象感受具體化，並結合嵌入式「深呼吸練習」引導低年級學童覺察身體訊號。', toolType: 'default', archStyle: 'tower', tags: ['一年級', '情緒報到', '生氣', '難過', '深呼吸'] },
+      { id: 'node_02', islandId: 'self_awareness', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-情緒百寶箱', subtitle: '心靈水晶百寶閣｜我的心情檢查站句型填空', icon: '🎁', pos: getHexRingPos('self_awareness', 1), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E7%99%BE%E5%AF%B6%E7%AE%B1`, desc: '建構孩子專屬的「情緒百寶箱」，運用「策略二：我的心情檢查站」句型填空工具，練習說出「當…的時候，我覺得…」。', toolType: 'default', archStyle: 'crystal', tags: ['二年級', '情緒百寶箱', '心情檢查站', '句型填空'] },
+      { id: 'node_03', islandId: 'self_awareness', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-情緒溫度計', subtitle: '微風感測觀測所｜量化情緒溫度與急救包', icon: '🌡️', pos: getHexRingPos('self_awareness', 2), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E6%BA%B6%E5%BA%A6%E8%A8%88`, desc: '導入量化情緒工具「情緒溫度計（1～10度）」，辨識情緒升溫的身體前兆，並在溫度飆高前即時打開個人情緒急救包。', toolType: 'default', archStyle: 'dome', tags: ['三年級', '情緒溫度計', '生氣', '焦慮', '急救包'] },
+      { id: 'node_04', islandId: 'self_awareness', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-我的覺察日記', subtitle: '靜心迴音書屋｜結構化自我反思日記', icon: '📔', pos: getHexRingPos('self_awareness', 3), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E6%88%91%E7%9A%84%E8%A6%BA%E5%AF%9F%E6%97%A5%E8%A8%98`, desc: '透過結構化覺察日記，記錄「引發事件 ➔ 當下想法 ➔ 情緒反應」，培養客觀觀看內心小劇場的後設認知能力。', toolType: 'diary_prompt', archStyle: 'pavilion', tags: ['四年級', '覺察日記', '反思', '內耗'] },
+      { id: 'node_21', islandId: 'self_awareness', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-優勢與目標設定', subtitle: '優勢星光燈塔｜發掘個人長處與成長目標', icon: '⭐', pos: getHexRingPos('self_awareness', 4), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E5%84%AA%E5%8B%A2%E8%88%87%E7%9B%AE%E6%A8%99%E8%A8%AD%E5%AE%9A`, desc: '識別個人多元優勢與限制，將「我還不會」轉化為成長型思維，並依據自身強項設定具體可行的階段目標。', toolType: 'strength_picker', archStyle: 'spire', tags: ['五年級', '優勢', '目標設定', '自信'] },
+      { id: 'node_22', islandId: 'self_awareness', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-內省與自信行動', subtitle: '核心價值稜鏡台｜自我效能檢視與實踐', icon: '💎', pos: getHexRingPos('self_awareness', 5), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E5%85%A7%E7%9C%81%E8%88%87%E8%87%AA%E4%BF%A1%E8%A1%8C%E5%8B%95`, desc: '高年級深度自我效能檢視，透過內省釐清個人核心價值觀，面對升學與同儕挑戰時展現堅定自信的行動力。', toolType: 'value_cards', archStyle: 'crystal', tags: ['六年級', '內省', '自信行動', '價值觀'] },
+      { id: 'node_05', islandId: 'self_management', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-厲害的控制家', subtitle: '深呼吸微風磨坊｜CBS 基礎呼吸控制法（數、呼、擠）', icon: '🌬️', pos: getHexRingPos('self_management', 0), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E5%8E%B2%E5%AE%B3%E7%9A%84%E6%8E%A7%E5%88%B6%E5%AE%B6`, desc: '學習「CBS 基礎呼吸控制法（Count 數、Breathe 呼、Squeeze 擠）」，化身厲害的情緒控制家，讓磨坊隨平稳呼吸轉動。', toolType: 'default', archStyle: 'windmill', tags: ['一年級', '控制家', '呼吸', 'CBS', '緊張'] },
+      { id: 'node_06', islandId: 'self_management', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-超能自律王', subtitle: '規律時鐘水車｜生活常規與延遲滿足', icon: '⏰', pos: getHexRingPos('self_management', 1), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E8%B6%85%E8%83%BD%E8%87%AA%E5%BE%8B%E7%8E%8B`, desc: '建立固定生活規律以降低焦慮感，透過棉花糖延遲滿足挑戰與每日自律集點，鍛鍊「先完成該做的事，再享受喜歡的事」。', toolType: 'default', archStyle: 'fountain', tags: ['二年級', '超能自律王', '自律', '生氣', '衝動'] },
+      { id: 'node_07', islandId: 'self_management', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-我是小超人', subtitle: '衝動冷卻噴泉｜情緒剎車與超人披風', icon: '🦸', pos: getHexRingPos('self_management', 2), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E6%88%91%E6%98%AF%E5%B0%8F%E8%B6%85%E4%BA%BA`, desc: '真正的小超人不是力氣最大的人，而是能在快要發脾氣時踩下「5 秒冷卻剎車」的人，學習轉換攻擊衝動為建設性行動。', toolType: 'default', archStyle: 'fountain', tags: ['三年級', '我是小超人', '生氣', '衝動控制'] },
+      { id: 'node_08', islandId: 'self_management', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-我的超級計畫', subtitle: '目標階梯步道｜情緒計畫表與微習慣拆解', icon: '🧗', pos: getHexRingPos('self_management', 3), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E6%88%91%E7%9A%84%E8%B6%85%E7%B4%9A%E8%A8%88%E7%95%AB`, desc: '使用「情緒計畫表」追蹤情緒變化，並將龐大的學習任務拆解為一階一階可輕鬆踏上的超級計畫步道。', toolType: 'goal_stepper', archStyle: 'steps', tags: ['四年級', '超級計畫', '目標', '拖延', '焦慮'] },
+      { id: 'node_23', islandId: 'self_management', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-超能力基地', subtitle: '90秒神經沉澱溫泉｜生理調節超能力基地', icon: '♨️', pos: getHexRingPos('self_management', 4), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E8%B6%85%E8%83%BD%E5%8A%9B%E5%9F%BA%E5%9C%B0`, desc: '認識腦科學「90 秒情緒化學物質代謝機制」：當憤怒或恐懼湧現時，只要不在前 90 秒添柴火，情緒海嘯就會自然退潮。', toolType: 'default', archStyle: 'dome', tags: ['五年級', '超能力基地', '90秒', '壓力', '放鬆'] },
+      { id: 'node_24', islandId: 'self_management', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-超能經理人', subtitle: '領航抗壓觀測閣｜時間管理與抵抗同儕不當壓力', icon: '🧭', pos: getHexRingPos('self_management', 5), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E8%B6%85%E8%83%BD%E7%B6%93%E7%90%86%E4%BA%BA`, desc: '化身自己時間與情緒的「超能經理人」，妥善調配升學壓力與休閒，並具備抵抗不良社交誘惑與同儕壓力的定力。', toolType: 'goal_stepper', archStyle: 'tower', tags: ['六年級', '超能經理人', '時間管理', '抗壓'] },
+      { id: 'node_09', islandId: 'social_awareness', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-情緒小偵探', subtitle: '表情放大鏡亭｜解讀非語言表情與肢體線索', icon: '🔍', pos: getHexRingPos('social_awareness', 0), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E5%B0%8F%E5%81%B5%E6%8E%A2`, desc: '化身敏銳的「情緒小偵探」，觀察同學的眉頭、嘴角、語氣與垂下的肩膀，讀懂沒說出口的心情密碼。', toolType: 'perspective_viewer', archStyle: 'pavilion', tags: ['一年級', '情緒小偵探', '表情', '觀察'] },
+      { id: 'node_10', islandId: 'social_awareness', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-社交小雷達', subtitle: '同理心避風港｜開啟社交雷達感知環境氛圍', icon: '📡', pos: getHexRingPos('social_awareness', 1), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E7%A4%BE%E4%BA%A4%E5%B0%8F%E9%9B%B7%E9%81%94`, desc: '打開頭頂的「社交小雷達」，辨識場合氣氛（何時適合開玩笑、何時需要安靜陪伴），成為體貼溫暖的同儕避風港。', toolType: 'empathy_notes', archStyle: 'tower', tags: ['二年級', '社交小雷達', '同理心', '陪伴'] },
+      { id: 'node_11', islandId: 'social_awareness', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-小小觀察家', subtitle: '換位雙筒觀景台｜思考、對談、分享互動架構', icon: '🔭', pos: getHexRingPos('social_awareness', 2), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E5%B0%8F%E5%B0%8F%E6%B8%AF%E5%AF%9F%E5%AE%B6`, desc: '運用「思考（Think）、對談（Pair）、分享（Share）」互動架構，站上換位觀景台，練習從不同角色的雙眼看同一件事。', toolType: 'perspective_viewer', archStyle: 'dome', tags: ['三年級', '小小觀察家', '換位思考', '誤會'] },
+      { id: 'node_12', islandId: 'social_awareness', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-社會偵探任務', subtitle: '社群守護神木｜辨識多元角色與社會支持資源', icon: '🌳', pos: getHexRingPos('social_awareness', 3), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E7%A4%BE%E6%9C%83%E5%81%B5%E6%8E%A2%E4%BB%BB%E5%8B%99`, desc: '出動執行「社會偵探任務」，探索校園與社區中默默付出的多元角色，並繪製個人與班級的守護神木求助支持網。', toolType: 'support_map', archStyle: 'tree', tags: ['四年級', '社會偵探任務', '求助', '支持系統'] },
+      { id: 'node_25', islandId: 'social_awareness', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-社會覺察練功坊', subtitle: '多元故事圖書館｜文化多樣性與破除刻板印象', icon: '📚', pos: getHexRingPos('social_awareness', 4), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F%E7%B7%B4%E5%8A%9F%E5%9D%8A`, desc: '在練功坊中深度探索文化多樣性與個別差異，破除性別、族群或特教生刻板印象，建立共融互重的班級文化。', toolType: 'perspective_viewer', archStyle: 'pavilion', tags: ['五年級', '社會覺察練功坊', '多元', '包容'] },
+      { id: 'node_26', islandId: 'social_awareness', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-我能讀懂你', subtitle: '心靈共鳴燈塔｜高階同理心回饋與深度理解', icon: '💖', pos: getHexRingPos('social_awareness', 5), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E6%88%91%E8%83%BD%E8%AE%80%E6%87%82%E4%BD%A0`, desc: '超越表面的同情，練習高階同理心回饋（「我能讀懂你言詞背後的在乎與不安」），成為團體中溫暖穩定的支持力量。', toolType: 'empathy_notes', archStyle: 'spire', tags: ['六年級', '我能讀懂你', '同理心', '傾聽'] },
+      { id: 'node_13', islandId: 'relationship', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-人際探險隊', subtitle: '微笑迎賓茶亭｜友善問候、輪流與分享', icon: '⛺', pos: getHexRingPos('relationship', 0), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E4%BA%BA%E9%9A%9B%E6%8E%A2%E9%9A%AA%E9%9A%8A`, desc: '組成「人際探險隊」，學習主動微笑打招呼、借用物品說請與謝謝、遊戲時輪流等待，踏出友誼的第一步。', toolType: 'nvc_builder', archStyle: 'pavilion', tags: ['一年級', '人際探險隊', '交朋友', '分享'] },
+      { id: 'node_14', islandId: 'relationship', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-星際拍檔任務', subtitle: '雙子星協作坊｜雙人合作分工與互助', icon: '🚀', pos: getHexRingPos('relationship', 1), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E6%98%9F%E9%9A%9B%E6%8B%8D%E6%AA%94%E4%BB%BB%E5%8B%99`, desc: '透過「星際拍檔任務」雙人闖關，學習在合作中明確分工、互相補位，體會「兩個人一起做比一個人更快更好」。', toolType: 'nvc_builder', archStyle: 'dome', tags: ['二年級', '星際拍檔', '合作', '分工'] },
+      { id: 'node_15', islandId: 'relationship', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-人際互動魔法島', subtitle: '和平圈魔法石陣｜運用和平圈傾聽與表達界線', icon: '🪄', pos: getHexRingPos('relationship', 2), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E4%BA%BA%E9%9A%9B%E4%BA%92%E5%8B%95%E9%AD%94%E6%B3%95%E5%B3%B6`, desc: '圍坐於「和平圈（Peace Circle）」，手持發言信物輪流說出真心話，學習尊重他人發言並溫和堅定地表達個人界線。', toolType: 'nvc_builder', archStyle: 'crystal', tags: ['三年級', '人際互動魔法島', '和平圈', '界線'] },
+      { id: 'node_16', islandId: 'relationship', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-班級協商冒險島', subtitle: '協同造舟工坊｜班級自治討論與化解歧見', icon: '⛵', pos: getHexRingPos('relationship', 3), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E7%8F%AD%E7%B4%9A%E5%8D%94%E5%95%86%E5%86%92%E9%9A%AA%E5%B3%B6`, desc: '當班級活動意見分歧時，不靠大聲爭吵或盲目少數服從多數，而是透過協商冒險島找出兼顧各方需求的共好方案。', toolType: 'nvc_builder', archStyle: 'steps', tags: ['四年級', '班級協商冒險島', '團隊', '溝通'] },
+      { id: 'node_27', islandId: 'relationship', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-五之神探險隊', subtitle: '五芒星拼圖聖殿｜拼圖教學法（Jigsaw）與團隊共榮', icon: '🛡️', pos: getHexRingPos('relationship', 4), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E4%BA%94%E4%B9%8B%E7%A5%9E%E6%8E%A2%E9%9A%AA%E9%9A%8A`, desc: '運用拼圖教學法（Jigsaw）與專題式學習，讓每位隊員成為不可或缺的拼圖專家，在互賴互助中完成高難度團隊任務。', toolType: 'nvc_builder', archStyle: 'spire', tags: ['五年級', '五之神探險隊', '拼圖教學法', '合作'] },
+      { id: 'node_28', islandId: 'relationship', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-衝突協商與人際大師', subtitle: '修復之橋與協商擂台｜Friday Talk × 修復對話診所', icon: '🌉', pos: getHexRingPos('relationship', 5), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E8%A1%9D%E7%AA%81%E5%8D%94%E5%95%86%E8%88%87%E4%BA%BA%E9%9A%9B%E5%A4%A7%E5%B8%AB`, desc: '整合「關卡1：實境挑戰賽與 Friday Talk 集章卡」、「關卡2：修復對話診所（NVC）」與「關卡3：協商辯論擂台」，培養人際大師素養！', toolType: 'nvc_builder', archStyle: 'bridge', tags: ['六年級', '衝突協商', '人際大師', '吵架', '修復對話'] },
+      { id: 'node_17', islandId: 'decision', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-魔法選擇大冒險', subtitle: '紅綠燈魔法拱門｜安全守則與基本是非選擇', icon: '🚦', pos: getHexRingPos('decision', 0), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E9%AD%94%E6%B3%95%E9%81%B8%E6%93%87%E5%A4%A7%E5%86%92%E9%9A%AA`, desc: '在魔法選擇大冒險中，認識校園安全與基本教室規範，練習在行動前先想一想：「這樣做安全嗎？會不會傷害到別人？」', toolType: 'default', archStyle: 'pavilion', tags: ['一年級', '魔法選擇大冒險', '安全', '選擇'] },
+      { id: 'node_18', islandId: 'decision', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-選擇小偵探', subtitle: '抉擇雙盤天平｜區分一時衝動與聰明選擇', icon: '⚖️', pos: getHexRingPos('decision', 1), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E9%81%B8%E6%93%87%E5%B0%8F%E5%81%B5%E6%8E%A2`, desc: '化身「選擇小偵探」，找出每個選項背後的線索，學會區分「一時貪玩的衝動選擇」與「讓自己更進步的聰明選擇」。', toolType: 'default', archStyle: 'tower', tags: ['二年級', '選擇小偵探', '做決定', '猶豫'] },
+      { id: 'node_19', islandId: 'decision', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-衝突時空實驗室', subtitle: '時空沙盤推演室｜回溯衝突起點與平行時空後果', icon: '⏳', pos: getHexRingPos('decision', 2), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E8%A1%9D%E7%AA%81%E6%99%82%E7%A9%BA%E5%AF%A6%E9%A9%97%E5%AE%A4`, desc: '搭上「衝突時空實驗室」時光機，模擬若在衝突發生那刻採取不同選擇（A 報復 vs B 冷靜溝通），將推演出截然不同的未來平行時空。', toolType: 'default', archStyle: 'dome', tags: ['三年級', '衝突時空實驗室', '後果', '推演'] },
+      { id: 'node_20', islandId: 'decision', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-決策思考大挑戰', subtitle: '五步星盤鐘樓｜發現、分析、尋求、評估、反思', icon: '🕰️', pos: getHexRingPos('decision', 3), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E6%B1%BA%E7%AD%96%E6%80%9D%E8%80%83%E5%A4%A7%E6%8C%91%E6%88%B0`, desc: '演練系統化決策五大步驟：「1.發現問題 ➔ 2.分析現況 ➔ 3.尋求方案 ➔ 4.評估選擇 ➔ 5.事後反思」，在時間壓力下做出穩健判斷。', toolType: 'default', archStyle: 'spire', tags: ['四年級', '決策思考大挑戰', '五步驟', '反思'] },
+      { id: 'node_29', islandId: 'decision', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-生命好舵手', subtitle: '領航羅盤觀測台｜價值觀評估與人生航向掌舵', icon: '☸️', pos: getHexRingPos('decision', 4), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E7%94%9F%E5%91%BD%E5%A5%BD%E8%88%B5%E6%89%8B`, desc: '在充滿網路誘惑與同儕壓力的航道上，緊握道德與安全羅盤，成為自己生命的「好舵手」，為個人與群體福祉負責。', toolType: 'default', archStyle: 'tower', tags: ['五年級', '生命好舵手', '價值觀', '負責'] },
+      { id: 'node_30', islandId: 'decision', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-思辨與決策', subtitle: '智慧溫馨思辨控制台｜完全同意／部分同意多維度論證', icon: '🏛️', pos: getHexRingPos('decision', 5), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E6%80%9D%E8%BE%A8%E8%88%87%E6%B1%BA%E7%AD%96`, desc: '整合「生活與社會思辨控制台」互動系統，針對校園與社會兩難議題進行「完全同意／部分同意／不同意」立場論述與深度思辨分析。', toolType: 'default', archStyle: 'crystal', tags: ['六年級', '思辨與決策', '思辨控制台', '道德困境', '做決定'] }
+    ];
+
+    const RESONANCE_LINES = [
+      { id: 'L01', from: 'node_01', to: 'node_05', title: '低年級：情緒報到 ➔ CBS呼吸控制', desc: '一年級先在「情緒報到」覺察心情，立刻連通「厲害的控制家」啟ങ്ക്動數、呼、擠呼吸法。' },
+      { id: 'L02', from: 'node_03', to: 'node_07', title: '中年級：情緒溫度計 ➔ 小超人剎車', desc: '三年級透過「情緒溫度計」發現怒氣升溫時，連通「我是小超人」踩下 5 秒衝動剎車。' },
+      { id: 'L03', from: 'node_02', to: 'node_10', title: '低年級：心情檢查站 ➔ 社交小雷達', desc: '二年級在「情緒百寶箱」看懂自己的感受後，更能開啟「社交小雷達」體察同學的情緒。' },
+      { id: 'L04', from: 'node_04', to: 'node_16', title: '中年級：覺察日記 ➔ 班級協商冒險', desc: '四年級藉由「我的覺察日記」釐清內心想法，在「班級協商冒險島」理性表達共識。' },
+      { id: 'L05', from: 'node_08', to: 'node_27', title: '中高年級：超級計畫 ➔ 五之神探險隊', desc: '個人的「超級計畫」時間自律，是五年級「五之神探險隊」拼圖合作教學成功的基石。' },
+      { id: 'L06', from: 'node_11', to: 'node_15', title: '三年級：小小觀察家 ➔ 人際魔法和平圈', desc: '透過「小小觀察家」換位思考，才能在「人際互動魔法島」的和平圈中真誠傾聽彼此。' },
+      { id: 'L07', from: 'node_12', to: 'node_20', title: '四年級：社會偵探任務 ➔ 決策五步挑戰', desc: '完成「社會偵探任務」看見群體需求，引導「決策思考大挑戰」兼顧眾人福祉。' },
+      { id: 'L08', from: 'node_23', to: 'node_29', title: '五年級：90秒超能力基地 ➔ 生命好舵手', desc: '掌握「超能力基地」90 秒情緒生理調節，才能在風浪中穩健當個「生命好舵手」。' },
+      { id: 'L09', from: 'node_26', to: 'node_28', title: '六年級：我能讀懂你 ➔ 衝突協商大師', desc: '具備「我能讀懂你」的深度同理心，才能在「衝突協商與人際大師」診所中完成修復式對話。' },
+      { id: 'L10', from: 'node_22', to: 'node_30', title: '六年級：內省自信行動 ➔ 思辨與決策控制台', desc: '六年級錨定「內省與自信行動」價值觀，在「思辨與決策控制台」面對兩難議題提出周延論證。' }
+    ];
+
+    const AVATAR_ROLE_COSTUMES = {
+      '自主探索者': { role: '自主探索者', icon: '🎒', shirtHex: 0xf97316, pantsHex: 0x334155, hatHex: 0xfacc15, packHex: 0xb45309, hatStyle: 'explorer', propStyle: 'compass', scale: 1.18, badgeGradient: 'from-amber-400 to-orange-500', outfitShort: '定裝：探險橘風衣＋雙肩登山包', outfitDetail: '探險橘風衣 ＋ 太陽黃探險帽 ＋ 登山大背包 ＋ 領航望遠鏡' },
+      '在學學童': { role: '在學學童', icon: '🧒', shirtHex: 0x0284c7, pantsHex: 0x1e3a8a, hatHex: 0xfde047, packHex: 0xef4444, hatStyle: 'student_cap', propStyle: 'balloon', scale: 1.02, badgeGradient: 'from-sky-400 to-blue-600', outfitShort: '定裝：活力藍校服＋小黃帽＋紅書包', outfitDetail: '活力藍校服 ＋ 安全小黃帽 ＋ 硬殼紅書包 ＋ 心情氣球' },
+      '教育引導者': { role: '教育引導者', icon: '🧑‍🏫', shirtHex: 0x4f46e5, pantsHex: 0x1e1b4b, hatHex: 0x312e81, packHex: 0xd97706, hatStyle: 'scholar', propStyle: 'staff', scale: 1.24, badgeGradient: 'from-indigo-500 to-purple-600', outfitShort: '定裝：學者紫禮袍＋博士帽＋引導法杖', outfitDetail: '學者紫禮袍 ＋ 學院博士方帽 ＋ 典籍背袋 ＋ 星光引導法杖' },
+      '成長家長': { role: '成長家長', icon: '🌱', shirtHex: 0x10b981, pantsHex: 0x4d7c0f, hatHex: 0xfde68a, packHex: 0x15803d, hatStyle: 'sunhat', propStyle: 'lantern', scale: 1.20, badgeGradient: 'from-emerald-400 to-teal-600', outfitShort: '定裝：森林綠園丁裝＋草帽＋守護提燈', outfitDetail: '森林綠園丁裝 ＋ 編織嫩芽草帽 ＋ 溫暖愛心守護提燈' }
+    };
+
+    // ★ 八大美德符文設定 (Virtues) ★
+    const VIRTUE_CONFIG = {
+      '正向': { id: '正向', island: 'self_awareness', node: 'node_21', colorHex: 0xfbbf24, icon: '☀️', desc: '發掘個人優勢，以成長型思維面對挑戰。' },
+      '勇氣': { id: '勇氣', island: 'self_awareness', node: 'node_22', colorHex: 0xfb923c, icon: '🦁', desc: '釐清核心價值，面對同儕壓力依然堅定行動。' },
+      '自制': { id: '自制', island: 'self_management', node: 'node_06', colorHex: 0x34d399, icon: '🛡️', desc: '建立規律與延遲滿足，做情緒的超能控制家。' },
+      '堅毅': { id: '堅毅', island: 'self_management', node: 'node_08', colorHex: 0x10b981, icon: '⛰️', desc: '將龐大任務拆解，堅持不懈地踏上目標階梯。' },
+      '尊重': { id: '尊重', island: 'social_awareness', node: 'node_25', colorHex: 0xf472b6, icon: '🤝', desc: '理解文化多樣性，破除刻板印象，共融互重。' },
+      '感恩': { id: '感恩', island: 'social_awareness', node: 'node_26', colorHex: 0xf43f5e, icon: '🙏', desc: '用高階同理心讀懂他人的付出與需要。' },
+      '禮貌': { id: '禮貌', island: 'relationship', node: 'node_13', colorHex: 0x60a5fa, icon: '😊', desc: '主動微笑打招呼、輪流分享，建立友善連結。' },
+      '負責': { id: '負責', island: 'decision', node: 'node_29', colorHex: 0x818cf8, icon: '⚓', desc: '緊握道德與安全羅盤，為個人與群體福祉掌舵。' }
+    };
+
+    const MEDAL_MILESTONES = [
+      { count: 5, icon: '🎐', name: '微風初心', desc: '初探心靈角落，溫柔接納自我感受' },
+      { count: 10, icon: '⚓', name: '定心磐石', desc: '自我調節煞車，遇風浪也穩如泰山' },
+      { count: 15, icon: '🌅', name: '溫暖晨光', desc: '散發出同理心，溫暖照亮他人世界' },
+      { count: 20, icon: '🌈', name: '築橋彩虹', desc: '跨越分歧衝突，建立和諧友誼連結' },
+      { count: 25, icon: '🌌', name: '智慧星盤', desc: '多方明辨是非，掌握自己生命航向' },
+      { count: 30, icon: '👑', name: '天空守護者', desc: 'SEL 探索圓滿，情緒穩定人際大師' }
+    ];
+
+    // --- APPLICATION STATE ---
+    const STATE = {
+      selectedLandmark: null,
+      hoveredLandmarkId: null,
+      activeIsland: 'all',
+      gradeFilter: 'all',
+      timeOfDay: 'day',
+      completedLandmarks: new Set(),
+      unlockedVirtues: new Set(),
+      lineMode: 'all',
+      avatarRole: '自主探索者',
+      avatarIcon: '🎒',
+      audioMuted: true,
+      directoryOpen: false
+    };
+
+    // --- AUDIO SYNTHESIS (Web Audio API) ---
+    let audioCtx = null;
+    function playChime(freq = 520, type = 'sine', duration = 0.5) {
+      if (STATE.audioMuted) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.4, audioCtx.currentTime + duration);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    // =========================================================================
+    // 2. THREE.JS 3D 場景建構
+    // =========================================================================
+    let scene, camera, renderer, controls;
+    let hemiLight, dirLight, ambientLight;
+    const islandGroups = new Map();
+    const landmarkMeshes = new Map();
+    const virtueMeshes = new Map();
+    const lineObjects = [];
+    const cloudClusters = [];
+    const interactiveObjects = [];
+    const htmlLabels = [];
+    const landmarkLabelsMap = new Map();
+    const npcWalkers = [];
+    const bridgeCurves = [];
+    const animalList = [];
+    const animatedPillars = [];
+    let avatarMesh = null;
+    let avatarLabelObj = null;
+
+    function initThree() {
+      const container = document.getElementById('webgl-canvas');
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x5b8fb9);
+      scene.fog = new THREE.FogExp2(0x5b8fb9, 0.0072);
+
+      // 微縮模型攝影鏡頭 (Tilt-shift Diorama)
+      camera = new THREE.PerspectiveCamera(24, window.innerWidth / window.innerHeight, 1, 1000);
+      camera.position.set(65, 55, 75);
+
+      renderer = new THREE.WebGLRenderer({ canvas: container, antialias: true, alpha: false });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2.05;
+      controls.minDistance = 12;
+      controls.maxDistance = 150;
+      controls.target.set(0, 2, 0);
+
+      setupLighting();
+      buildSkyCloudSea();
+      buildFloatingArchipelago();
+      buildLandmarks();
+      buildVirtueTablets();
+      buildResonanceLines();
+      buildAvatar();
+      buildAnimals();
+
+      window.addEventListener('resize', onWindowResize);
+      container.addEventListener('pointerdown', onPointerDown);
+      container.addEventListener('pointermove', onPointerMove);
+    }
+
+    function setupLighting() {
+      ambientLight = new THREE.AmbientLight(0xfffbeb, 0.58);
+      scene.add(ambientLight);
+      hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x94a3b8, 0.48);
+      hemiLight.position.set(0, 60, 0);
+      scene.add(hemiLight);
+      dirLight = new THREE.DirectionalLight(0xfff7ed, 0.85);
+      dirLight.position.set(40, 65, 30);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
+      scene.add(dirLight);
+    }
+
+    function buildVirtueTablets() {
+      const stoneMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8, flatShading: true });
+      
+      Object.values(VIRTUE_CONFIG).forEach(v => {
+        const islandGroup = islandGroups.get(v.island);
+        if (!islandGroup) return;
+
+        const targetNode = LANDMARKS.find(l => l.id === v.node);
+        const islandCfg = ISLAND_CONFIG[v.island];
+        const relX = targetNode.pos.x - islandCfg.pos.x;
+        const relZ = targetNode.pos.z - islandCfg.pos.z;
+        
+        const angle = Math.atan2(relZ, relX);
+        const stoneX = Math.cos(angle + 0.25) * 6.8;
+        const stoneZ = Math.sin(angle + 0.25) * 6.8;
+
+        const group = new THREE.Group();
+        
+        const tablet = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.2, 0.3), stoneMat);
+        tablet.position.y = 0.6;
+        tablet.castShadow = true;
+        group.add(tablet);
+
+        const runeMat = new THREE.MeshLambertMaterial({ color: 0x475569, emissive: 0x000000, flatShading: true });
+        const rune = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.6, 0.35), runeMat);
+        rune.position.y = 0.7;
+        group.add(rune);
+
+        const pillarGeo = new THREE.CylinderGeometry(0.3, 0.3, 15, 8);
+        pillarGeo.translate(0, 7.5, 0); 
+        const pillarMat = new THREE.MeshBasicMaterial({ color: v.colorHex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending });
+        const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+        pillar.position.y = 0.5;
+        group.add(pillar);
+
+        group.position.set(stoneX, 1.2, stoneZ);
+        group.rotation.y = -angle;
+        
+        islandGroup.add(group);
+        virtueMeshes.set(v.id, { group, runeMat, pillarMat, pillar, cfg: v });
+      });
+    }
+
+    function illuminateVirtueStone(virtueId) {
+      const v = virtueMeshes.get(virtueId);
+      if (!v) return;
+
+      v.runeMat.color.setHex(0xffffff);
+      v.runeMat.emissive.setHex(v.cfg.colorHex);
+      v.runeMat.emissiveIntensity = 1.0;
+
+      const islandCfg = ISLAND_CONFIG[v.cfg.island];
+      const worldPos = new THREE.Vector3(islandCfg.pos.x + v.group.position.x, islandCfg.pos.y + 1.2, islandCfg.pos.z + v.group.position.z);
+      flyCameraTo(worldPos.x, worldPos.y + 1, worldPos.z, 18);
+
+      new TWEEN.Tween(v.pillarMat)
+        .to({ opacity: 0.8 }, 600)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .onComplete(() => {
+          animatedPillars.push({ mat: v.pillarMat, phase: Math.random() * Math.PI });
+        })
+        .start();
+        
+      playChime(880, 'sine', 1.2);
+    }
+
+    function createLowPolyAnimal(type, colorHex) {
+      const group = new THREE.Group();
+      const mat = new THREE.MeshLambertMaterial({ color: colorHex, flatShading: true });
+      const darkMat = new THREE.MeshLambertMaterial({ color: 0x334155, flatShading: true });
+
+      if (type === 'dog' || type === 'cat' || type === 'fox') {
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.2, 0.2), mat); body.position.y = 0.15; body.castShadow = true; group.add(body);
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), mat); head.position.set(0.2, 0.3, 0); head.castShadow = true; group.add(head);
+        const earGeo = new THREE.ConeGeometry(0.05, 0.12, 4);
+        const earL = new THREE.Mesh(earGeo, mat); earL.position.set(0.2, 0.42, 0.06); const earR = new THREE.Mesh(earGeo, mat); earR.position.set(0.2, 0.42, -0.06);
+        group.add(earL, earR);
+        for (let i = 0; i < 4; i++) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.15, 0.06), mat); leg.position.set(i < 2 ? 0.12 : -0.12, 0.075, i % 2 === 0 ? 0.06 : -0.06); leg.castShadow = true; group.add(leg); }
+        const tail = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.05, 0.05), mat); tail.position.set(-0.22, 0.2, 0); tail.rotation.z = Math.PI / 4; group.add(tail); group.userData = { tail };
+      } else if (type === 'sheep') {
+        const body = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22, 0), mat); body.position.y = 0.2; body.scale.set(1.2, 1, 1); body.castShadow = true; group.add(body);
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.15), darkMat); head.position.set(0.2, 0.25, 0); group.add(head);
+        for (let i = 0; i < 4; i++) { const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.15, 4), darkMat); leg.position.set(i < 2 ? 0.1 : -0.1, 0.075, i % 2 === 0 ? 0.08 : -0.08); group.add(leg); }
+      } else if (type === 'bird') {
+        const body = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.25, 4), mat); body.rotation.z = -Math.PI / 2; group.add(body);
+        const wingL = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.25, 3), mat); wingL.position.set(0, 0, 0.12); wingL.rotation.x = Math.PI / 2;
+        const wingR = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.25, 3), mat); wingR.position.set(0, 0, -0.12); wingR.rotation.x = -Math.PI / 2;
+        group.add(wingL, wingR); group.userData = { isBird: true, wingL, wingR };
+      }
+
+      group.scale.setScalar(0.75);
+      return group;
+    }
+
+    function buildAnimals() {
+      for(let i = 0; i < 8; i++) {
+        const bird = createLowPolyAnimal('bird', 0xffffff);
+        bird.position.set(Math.random() * 40 - 20, 6 + Math.random() * 8, Math.random() * 40 - 20);
+        scene.add(bird);
+        animalList.push({ mesh: bird, isFlying: true, speed: 0.2 + Math.random() * 0.1, angle: Math.random() * Math.PI * 2, r: 8 + Math.random() * 15, baseY: 6 + Math.random() * 8 });
+      }
+      const animalConfigs = [
+        { island: 'inner_lake', type: 'sheep', color: 0xffffff, count: 3, r: 3.5 },
+        { island: 'self_awareness', type: 'cat', color: 0xfcd34d, count: 2, r: 2.5 }, 
+        { island: 'self_management', type: 'dog', color: 0xd97706, count: 2, r: 2.5 }, 
+        { island: 'social_awareness', type: 'fox', color: 0xf97316, count: 2, r: 2.5 }, 
+        { island: 'relationship', type: 'sheep', color: 0xfef08a, count: 2, r: 3.0 }, 
+        { island: 'decision', type: 'dog', color: 0x94a3b8, count: 2, r: 2.5 } 
+      ];
+      animalConfigs.forEach(c => {
+        const ig = islandGroups.get(c.island);
+        if(ig) {
+          for(let i = 0; i < c.count; i++) {
+            const anim = createLowPolyAnimal(c.type, c.color);
+            const a = Math.random() * Math.PI * 2;
+            anim.position.set(Math.cos(a) * c.r, 1.25, Math.sin(a) * c.r);
+            ig.add(anim);
+            animalList.push({ mesh: anim, speed: (Math.random() > 0.5 ? 1 : -1) * (0.08 + Math.random() * 0.05), angle: a, r: c.r + Math.random(), baseY: 1.25 });
+          }
+        }
+      });
+    }
+
+    function buildSkyCloudSea() {
+      const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.88, flatShading: true });
+      const cloudPositions = [ { x: -38, y: -6, z: -28, s: 1.5 }, { x: 35, y: -8, z: -30, s: 1.8 }, { x: -42, y: -5, z: 18, s: 1.4 }, { x: 40, y: -7, z: 22, s: 1.6 }, { x: 0, y: -11, z: 38, s: 2.1 }, { x: -18, y: -9, z: -42, s: 1.7 }, { x: 22, y: -4, z: -18, s: 1.1 }, { x: -20, y: -6, z: 8, s: 1.2 }, { x: 14, y: -10, z: -5, s: 1.5 }, { x: -8, y: -12, z: -14, s: 1.9 }, { x: 32, y: 4, z: 5, s: 0.9 }, { x: -34, y: 5, z: -18, s: 0.85 } ];
+      cloudPositions.forEach((cp, idx) => {
+        const cluster = new THREE.Group();
+        const puffCount = 4 + (idx % 3);
+        for (let i = 0; i < puffCount; i++) {
+          const puffGeo = new THREE.DodecahedronGeometry(2.6 + (i % 2) * 1.1, 1);
+          const puff = new THREE.Mesh(puffGeo, cloudMat);
+          puff.position.set((i - puffCount / 2) * 2.3, Math.sin(i * 1.5) * 0.6, Math.cos(i * 1.2) * 1.2); puff.scale.set(1.2, 0.65, 1.0); cluster.add(puff);
+        }
+        cluster.position.set(cp.x, cp.y, cp.z); cluster.scale.setScalar(cp.s);
+        cluster.userData = { baseX: cp.x, baseY: cp.y, speed: 0.18 + (idx % 4) * 0.08, phase: idx * 0.9 };
+        scene.add(cluster); cloudClusters.push(cluster);
+      });
+    }
+
+    function createFloatingSkyIsland(cfg) {
+      const group = new THREE.Group();
+      const radius = cfg.radius;
+      const topCapGeo = new THREE.CylinderGeometry(radius * 0.97, radius, 0.65, 6);
+      const topCapMat = new THREE.MeshLambertMaterial({ color: cfg.groundColor, flatShading: true });
+      const topCap = new THREE.Mesh(topCapGeo, topCapMat); topCap.position.y = 0.88; topCap.receiveShadow = true; topCap.castShadow = true; group.add(topCap);
+      const innerTurfGeo = new THREE.CylinderGeometry(radius * 0.84, radius * 0.92, 0.22, 12);
+      const innerTurfMat = new THREE.MeshLambertMaterial({ color: cfg.turfColor || 0x22c55e, flatShading: true });
+      const innerTurf = new THREE.Mesh(innerTurfGeo, innerTurfMat); innerTurf.position.y = 1.15; innerTurf.receiveShadow = true; group.add(innerTurf);
+      for (let e = 0; e < 6; e++) {
+        const edgeAng = (e * Math.PI) / 3 + Math.PI / 6;
+        const turfLedge = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.55, 0.38, 0.65), innerTurfMat);
+        turfLedge.position.set(Math.cos(edgeAng) * (radius * 0.86), 0.75, Math.sin(edgeAng) * (radius * 0.86)); turfLedge.rotation.y = -edgeAng + Math.PI / 2; group.add(turfLedge);
+      }
+      const rimGeo = new THREE.CylinderGeometry(radius, radius * 0.95, 0.68, 6);
+      const rimMat = new THREE.MeshLambertMaterial({ color: cfg.color, flatShading: true });
+      const rimMesh = new THREE.Mesh(rimGeo, rimMat); rimMesh.position.y = 0.22; rimMesh.receiveShadow = true; group.add(rimMesh);
+      populateGrassMeadowOnIsland(cfg, group, radius);
+      const cliffGeo = new THREE.ConeGeometry(radius * 0.92, 7.5, 6);
+      const cliffMat = new THREE.MeshLambertMaterial({ color: cfg.cliffColor, flatShading: true });
+      const cliffMesh = new THREE.Mesh(cliffGeo, cliffMat); cliffMesh.rotation.x = Math.PI; cliffMesh.position.y = -3.9; cliffMesh.receiveShadow = true; group.add(cliffMesh);
+      for (let i = 0; i < 3; i++) {
+        const subAngle = (i * 2 * Math.PI) / 3 + 0.4;
+        const subCone = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.35, 4.8, 5), cliffMat); subCone.rotation.x = Math.PI; subCone.position.set(Math.cos(subAngle) * (radius * 0.45), -2.8, Math.sin(subAngle) * (radius * 0.45)); group.add(subCone);
+      }
+      const satMat = new THREE.MeshLambertMaterial({ color: cfg.color, flatShading: true });
+      for (let s = 0; s < 2; s++) {
+        const sat = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), satMat); const ang = s * Math.PI + 0.8; sat.position.set(Math.cos(ang) * (radius + 1.8), -1.2 + s * 1.5, Math.sin(ang) * (radius + 1.8)); group.add(sat);
+      }
+      const vineMat = new THREE.MeshLambertMaterial({ color: 0x15803d, flatShading: true });
+      for (let v = 0; v < 8; v++) {
+        const vAng = (v * Math.PI) / 4 + 0.2; const vineLen = 1.6 + (v % 3) * 0.7;
+        const vine = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.04, vineLen, 4), vineMat); vine.position.set(Math.cos(vAng) * (radius * 0.92), 0.3 - vineLen / 2, Math.sin(vAng) * (radius * 0.92)); group.add(vine);
+      }
+      buildIslandHeroAndFlora(cfg, group);
+      return { group, topCap };
+    }
+
+    function populateGrassMeadowOnIsland(cfg, group, radius) {
+      const yLawn = 1.24;
+      const bladeColors = [0x22c55e, 0x4ade80, 0x16a34a, 0x86efac];
+      for (let i = 0; i < 22; i++) {
+        const rRatio = 0.22 + ((i * 0.618) % 0.62); const theta = i * 2.39996; const gx = Math.cos(theta) * (radius * rRatio); const gz = Math.sin(theta) * (radius * rRatio);
+        const tuft = new THREE.Group();
+        const bMat = new THREE.MeshLambertMaterial({ color: bladeColors[i % bladeColors.length], flatShading: true });
+        for (let b = 0; b < 3; b++) { const bladeH = 0.38 + ((i + b) % 3) * 0.14; const blade = new THREE.Mesh(new THREE.ConeGeometry(0.11, bladeH, 4), bMat); blade.position.set((b - 1) * 0.12, bladeH / 2, (b % 2 === 0 ? 1 : -1) * 0.06); blade.rotation.z = (b - 1) * 0.22; tuft.add(blade); }
+        tuft.position.set(gx, yLawn, gz); tuft.rotation.y = (i * 1.1) % 6.28; tuft.userData = { isSwayingPlant: true, phase: i * 0.45 }; group.add(tuft);
+      }
+      const hillMat = new THREE.MeshLambertMaterial({ color: cfg.turfColor || 0x16a34a, flatShading: true });
+      for (let h = 0; h < 6; h++) { const hAng = (h * Math.PI) / 3 + 0.52; const hill = new THREE.Mesh(new THREE.DodecahedronGeometry(0.85, 1), hillMat); hill.scale.set(1.4, 0.32, 1.2); hill.position.set(Math.cos(hAng) * (radius * 0.68), yLawn + 0.05, Math.sin(hAng) * (radius * 0.68)); hill.receiveShadow = true; group.add(hill); }
+      const stoneMat = new THREE.MeshLambertMaterial({ color: 0xf1f5f9, flatShading: true });
+      for (let s = 0; s < 6; s++) { const sAng = (s * Math.PI) / 3; for (let step = 1; step <= 2; step++) { const dist = 2.6 + step * 1.15; const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.08, 6), stoneMat); stone.position.set(Math.cos(sAng) * dist, yLawn + 0.02, Math.sin(sAng) * dist); group.add(stone); } }
+    }
+
+    function createPineTree(scale = 1.0, leafColor = 0x15803d) {
+      const t = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 0.9, 5), new THREE.MeshLambertMaterial({ color: 0x78350f, flatShading: true })); trunk.position.y = 0.45; t.add(trunk);
+      const mat = new THREE.MeshLambertMaterial({ color: leafColor, flatShading: true });
+      [1.2, 1.9, 2.5].forEach((y, i) => { const c = new THREE.Mesh(new THREE.ConeGeometry(0.85 - i*0.2, 1.3 - i*0.2, 6), mat); c.position.y = y; c.castShadow = true; t.add(c); });
+      t.scale.setScalar(scale); t.userData = { isSwayingPlant: true, phase: Math.random() * 6.28 }; return t;
+    }
+
+    function createPuffTree(scale = 1.0, crownColor = 0x22c55e, subCrownColor = 0x4ade80) {
+      const t = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.26, 1.2, 5), new THREE.MeshLambertMaterial({ color: 0x713f12, flatShading: true })); trunk.position.y = 0.6; t.add(trunk);
+      const mainCrown = new THREE.Mesh(new THREE.DodecahedronGeometry(0.95, 0), new THREE.MeshLambertMaterial({ color: crownColor, flatShading: true })); mainCrown.position.y = 1.65; mainCrown.castShadow = true; t.add(mainCrown);
+      const subCrown = new THREE.Mesh(new THREE.DodecahedronGeometry(0.65, 0), new THREE.MeshLambertMaterial({ color: subCrownColor, flatShading: true })); subCrown.position.set(0.55, 1.45, 0.3); subCrown.castShadow = true; t.add(subCrown);
+      t.scale.setScalar(scale); t.userData = { isSwayingPlant: true, phase: Math.random() * 6.28 }; return t;
+    }
+
+    function createFlowerBush(bushColor = 0x4ade80, flowerColor = 0xf43f5e) {
+      const b = new THREE.Group();
+      const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.45, 0), new THREE.MeshLambertMaterial({ color: bushColor, flatShading: true })); bush.position.y = 0.3; bush.scale.set(1.2, 0.8, 1.2); b.add(bush);
+      const fMat = new THREE.MeshBasicMaterial({ color: flowerColor });
+      for (let i = 0; i < 3; i++) { const fl = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), fMat); const a = (i * 2 * Math.PI) / 3; fl.position.set(Math.cos(a) * 0.25, 0.55, Math.sin(a) * 0.25); b.add(fl); }
+      return b;
+    }
+
+    function buildIslandHeroAndFlora(cfg, group) {
+      const yTop = 1.2;
+      if (cfg.id === 'inner_lake') {
+        const pool = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 0.22, 12), new THREE.MeshLambertMaterial({ color: 0x38bdf8, flatShading: true })); pool.position.y = yTop + 0.05; group.add(pool);
+        const castleBase = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.7, 2.2, 6), new THREE.MeshLambertMaterial({ color: 0xfef3c7, flatShading: true })); castleBase.position.y = yTop + 1.1; castleBase.castShadow = true; group.add(castleBase);
+        const treeCrown = new THREE.Mesh(new THREE.DodecahedronGeometry(2.5, 1), new THREE.MeshLambertMaterial({ color: 0x10b981, flatShading: true })); treeCrown.position.y = yTop + 3.6; treeCrown.castShadow = true; group.add(treeCrown);
+        const treeCoords = [[-5.5, -3], [5.5, -3], [-4.8, 4.5], [4.8, 4.5]];
+        treeCoords.forEach(([tx, tz], i) => { const tr = i % 2 === 0 ? createPuffTree(0.95, 0x10b981, 0x34d399) : createPineTree(0.9, 0x059669); tr.position.set(tx, yTop, tz); group.add(tr); });
+      }
+      else if (cfg.id === 'self_awareness') {
+        const mirrorPond = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 0.18, 16), new THREE.MeshLambertMaterial({ color: 0x7dd3fc, flatShading: true })); mirrorPond.position.y = yTop + 0.05; group.add(mirrorPond);
+        const mirrorArch = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.18, 6, 16, Math.PI), new THREE.MeshLambertMaterial({ color: 0xe0f2fe, emissive: 0x0284c7, emissiveIntensity: 0.25, flatShading: true })); mirrorArch.position.y = yTop + 0.2; group.add(mirrorArch);
+        const prismGroup = new THREE.Group();
+        const bigPrism = new THREE.Mesh(new THREE.OctahedronGeometry(1.35, 0), new THREE.MeshLambertMaterial({ color: 0xe0f2fe, emissive: 0x38bdf8, emissiveIntensity: 0.45, flatShading: true })); bigPrism.scale.set(0.85, 1.65, 0.85); prismGroup.add(bigPrism); prismGroup.position.y = yTop + 2.6; prismGroup.userData = { isHeroPrism: true }; group.add(prismGroup);
+        for (let c = 0; c < 5; c++) { const ang = (c * 2 * Math.PI) / 5; const shard = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.5, 5), new THREE.MeshLambertMaterial({ color: 0x38bdf8, flatShading: true })); shard.position.set(Math.cos(ang) * 2.4, yTop + 0.6, Math.sin(ang) * 2.4); shard.rotation.z = (c % 2 === 0 ? 1 : -1) * 0.25; group.add(shard); }
+        const willowPositions = [[-3.8, -2.2], [3.8, -2.2], [-3.2, 3.2], [3.2, 3.2], [0, 4.0]];
+        willowPositions.forEach(([wx, wz], idx) => {
+          if (idx < 3) { const willow = createPuffTree(0.88, 0x2dd4bf, 0x5eead4); willow.position.set(wx, yTop, wz); group.add(willow); }
+          else { const bush = createFlowerBush(0x34d399, 0x38bdf8); bush.position.set(wx, yTop, wz); group.add(bush); }
+        });
+      }
+      else if (cfg.id === 'self_management') {
+        const heroMill = new THREE.Group();
+        const millBody = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.45, 3.4, 8), new THREE.MeshLambertMaterial({ color: 0xfef3c7, flatShading: true })); millBody.position.y = 1.7; millBody.castShadow = true; heroMill.add(millBody);
+        const millCap = new THREE.Mesh(new THREE.ConeGeometry(1.25, 1.2, 8), new THREE.MeshLambertMaterial({ color: 0x15803d, flatShading: true })); millCap.position.y = 3.9; heroMill.add(millCap);
+        const bigBlades = new THREE.Group(); bigBlades.position.set(0, 3.1, 1.15);
+        for (let i = 0; i < 4; i++) { const sail = new THREE.Mesh(new THREE.BoxGeometry(0.32, 2.5, 0.06), new THREE.MeshLambertMaterial({ color: 0xfde047 })); sail.rotation.z = (Math.PI / 2) * i; bigBlades.add(sail); }
+        bigBlades.userData = { isRotatingBlades: true }; heroMill.add(bigBlades); heroMill.position.set(-0.8, yTop, -0.5); group.add(heroMill);
+        const hourglass = new THREE.Group(); const hgMat = new THREE.MeshLambertMaterial({ color: 0xfbbf24, flatShading: true });
+        const topBulb = new THREE.Mesh(new THREE.ConeGeometry(0.75, 1.1, 6), hgMat); topBulb.rotation.x = Math.PI; topBulb.position.y = 1.55; hourglass.add(topBulb);
+        const botBulb = new THREE.Mesh(new THREE.ConeGeometry(0.75, 1.1, 6), hgMat); botBulb.position.y = 0.55; hourglass.add(botBulb);
+        hourglass.position.set(2.1, yTop, 1.2); group.add(hourglass);
+        const pineCoords = [[-3.8, -2.5], [3.6, -2.4], [-3.5, 2.8], [3.5, 3.0], [0.5, -3.6]];
+        pineCoords.forEach(([px, pz], idx) => {
+          if (idx < 4) { const pine = createPineTree(0.95 + (idx % 2) * 0.2, 0x15803d); pine.position.set(px, yTop, pz); group.add(pine); }
+          else { const hedge = createFlowerBush(0x16a34a, 0xfacc15); hedge.position.set(px, yTop, pz); group.add(hedge); }
+        });
+      }
+      else if (cfg.id === 'social_awareness') {
+        const sacredTree = new THREE.Group();
+        const bigTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.5, 3.2, 7), new THREE.MeshLambertMaterial({ color: 0x78350f, flatShading: true })); bigTrunk.position.y = 1.6; bigTrunk.castShadow = true; sacredTree.add(bigTrunk);
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.3, 1.8), new THREE.MeshLambertMaterial({ color: 0xd97706, flatShading: true })); cabin.position.set(0.6, 2.8, 0.6); sacredTree.add(cabin);
+        const cabinWindow = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1.86), new THREE.MeshBasicMaterial({ color: 0xfef08a })); cabinWindow.position.set(0.6, 2.8, 0.6); sacredTree.add(cabinWindow);
+        const sakuraMat1 = new THREE.MeshLambertMaterial({ color: 0xf472b6, flatShading: true }); const sakuraMat2 = new THREE.MeshLambertMaterial({ color: 0xfbcfe8, flatShading: true });
+        const cMain = new THREE.Mesh(new THREE.DodecahedronGeometry(2.3, 1), sakuraMat1); cMain.position.set(-0.2, 4.1, -0.2); cMain.castShadow = true; sacredTree.add(cMain);
+        const cSub1 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6, 0), sakuraMat2); cSub1.position.set(1.4, 3.9, 0.8); sacredTree.add(cSub1);
+        const cSub2 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5, 0), sakuraMat1); cSub2.position.set(-1.5, 3.6, 0.9); sacredTree.add(cSub2);
+        sacredTree.position.set(0, yTop, 0); sacredTree.userData = { isSwayingPlant: true, phase: 1.1 }; group.add(sacredTree);
+        const sakuraCoords = [[-3.8, -2.0], [3.8, -2.0], [-3.2, 3.0], [3.2, 3.0]];
+        sakuraCoords.forEach(([sx, sz], idx) => {
+          if (idx < 2) { const sk = createPuffTree(0.85, 0xf9a8d4, 0xf472b6); sk.position.set(sx, yTop, sz); group.add(sk); }
+          else { const rose = createFlowerBush(0x22c55e, 0xf43f5e); rose.position.set(sx, yTop, sz); group.add(rose); }
+        });
+      }
+      else if (cfg.id === 'relationship') {
+        const stream = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.14, 1.8), new THREE.MeshLambertMaterial({ color: 0x38bdf8, flatShading: true })); stream.position.set(0, yTop + 0.04, -0.8); group.add(stream);
+        const bridgeGroup = new THREE.Group();
+        const mainArch = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.35, 6, 16, Math.PI), new THREE.MeshLambertMaterial({ color: 0xea580c, flatShading: true })); mainArch.rotation.y = Math.PI / 2; mainArch.position.set(0, 0.2, -0.8); bridgeGroup.add(mainArch);
+        const railArch = new THREE.Mesh(new THREE.TorusGeometry(2.65, 0.12, 6, 16, Math.PI), new THREE.MeshLambertMaterial({ color: 0xfacc15, flatShading: true })); railArch.rotation.y = Math.PI / 2; railArch.position.set(0, 0.3, -0.8); bridgeGroup.add(railArch);
+        bridgeGroup.position.y = yTop; group.add(bridgeGroup);
+        const campfire = new THREE.Group();
+        const fireFlame = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.3, 6), new THREE.MeshBasicMaterial({ color: 0xf97316 })); fireFlame.position.y = 0.65; fireFlame.userData = { isCampfire: true }; campfire.add(fireFlame);
+        for (let b = 0; b < 6; b++) { const bAng = (b * Math.PI) / 3; const bench = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.28, 0.3), new THREE.MeshLambertMaterial({ color: 0x92400e, flatShading: true })); bench.position.set(Math.cos(bAng) * 1.45, 0.14, Math.sin(bAng) * 1.45); bench.rotation.y = -bAng + Math.PI / 2; campfire.add(bench); }
+        campfire.position.set(0, yTop, 2.1); group.add(campfire);
+        const mapleCoords = [[-3.8, -2.5], [3.8, -2.5], [-3.5, 2.8], [3.5, 2.8]];
+        mapleCoords.forEach(([mx, mz], idx) => {
+          if (idx < 3) { const maple = createPuffTree(0.92, 0xf97316, 0xfbbf24); maple.position.set(mx, yTop, mz); group.add(maple); }
+          else { const sunflower = createFlowerBush(0x16a34a, 0xfacc15); sunflower.position.set(mx, yTop, mz); group.add(sunflower); }
+        });
+      }
+      else if (cfg.id === 'decision') {
+        const towerGroup = new THREE.Group();
+        const obelisk = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 1.2, 3.2, 6), new THREE.MeshLambertMaterial({ color: 0xe2e8f0, flatShading: true })); obelisk.position.y = 1.6; obelisk.castShadow = true; towerGroup.add(obelisk);
+        const astrolabe = new THREE.Group(); astrolabe.position.y = 4.1;
+        const ringMat = new THREE.MeshLambertMaterial({ color: 0xfbbf24, emissive: 0xd97706, emissiveIntensity: 0.3, flatShading: true });
+        const r1 = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.08, 6, 18), ringMat); const r2 = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.07, 6, 18), ringMat); r2.rotation.x = Math.PI / 3; const r3 = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.06, 6, 18), ringMat); r3.rotation.y = Math.PI / 3;
+        const coreStar = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
+        astrolabe.add(r1, r2, r3, coreStar); astrolabe.userData = { isAstrolabe: true }; towerGroup.add(astrolabe); towerGroup.position.set(0, yTop, -0.8); group.add(towerGroup);
+        const scaleGroup = new THREE.Group();
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.25, 2.2, 6), ringMat); pillar.position.y = 1.1; scaleGroup.add(pillar);
+        const beamGroup = new THREE.Group(); beamGroup.position.y = 2.1;
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.14, 0.14), ringMat); beamGroup.add(beam);
+        const leftPan = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.4, 0.18, 8), ringMat); leftPan.position.set(-1.3, -0.6, 0); const rightPan = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.4, 0.18, 8), ringMat); rightPan.position.set(1.3, -0.6, 0);
+        beamGroup.add(leftPan, rightPan); beamGroup.userData = { isBalanceScale: true }; scaleGroup.add(beamGroup); scaleGroup.position.set(0, yTop, 2.0); group.add(scaleGroup);
+        const ginkgoCoords = [[-3.8, -2.2], [3.8, -2.2], [-3.4, 2.8], [3.4, 2.8]];
+        ginkgoCoords.forEach(([gx, gz], idx) => {
+          if (idx < 3) { const ginkgo = createPuffTree(0.9, 0xfacc15, 0xfde047); ginkgo.position.set(gx, yTop, gz); group.add(ginkgo); }
+          else { const lavender = createFlowerBush(0x4ade80, 0x818cf8); lavender.position.set(gx, yTop, gz); group.add(lavender); }
+        });
+      }
+    }
+
+    function buildFloatingArchipelago() {
+      Object.values(ISLAND_CONFIG).forEach(cfg => {
+        const { group, topCap } = createFloatingSkyIsland(cfg);
+        group.position.set(cfg.pos.x, cfg.pos.y, cfg.pos.z);
+        group.userData = { isIsland: true, islandId: cfg.id, baseY: cfg.pos.y, floatSpeed: cfg.floatSpeed, floatPhase: cfg.floatPhase };
+        topCap.userData = { isIsland: true, islandId: cfg.id };
+        scene.add(group); islandGroups.set(cfg.id, group); interactiveObjects.push(group);
+
+        create3DLabel({
+          id: `label_${cfg.id}`, title: cfg.name, subtitle: cfg.competency.split(' ')[0], borderHex: cfg.borderHex,
+          targetGroup: group, offsetY: cfg.id === 'inner_lake' ? 7.2 : 5.4, onClick: () => flyToIsland(cfg.id)
+        });
+
+        if (cfg.id !== 'inner_lake') {
+          const corePos = ISLAND_CONFIG.inner_lake.pos;
+          const start = new THREE.Vector3(cfg.pos.x * 0.62, cfg.pos.y + 0.5, cfg.pos.z * 0.62);
+          const end = new THREE.Vector3(cfg.pos.x * 0.32, corePos.y + 0.5, cfg.pos.z * 0.32);
+          const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5); mid.y -= 0.8; 
+          const bridgeCurve = new THREE.QuadraticBezierCurve3(start, mid, end); bridgeCurves.push(bridgeCurve);
+          const bridgeMesh = new THREE.Mesh(new THREE.TubeGeometry(bridgeCurve, 16, 0.35, 4, false), new THREE.MeshLambertMaterial({ color: 0xd97706, flatShading: true }));
+          scene.add(bridgeMesh);
+        }
+      });
+    }
+
+    function create3DLabel({ id, title, subtitle, borderHex, targetGroup, offsetY, onClick }) {
+      const container = document.getElementById('labels-3d-container');
+      const el = document.createElement('div');
+      el.className = 'island-3d-label absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md shadow-md border-2 text-[11px] font-black text-slate-800 whitespace-nowrap flex items-center gap-1';
+      el.style.borderColor = borderHex;
+      el.innerHTML = `<span>${title}</span><span class="text-[9px] font-semibold text-slate-500 hidden sm:inline">｜${subtitle}</span>`;
+      el.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
+      container.appendChild(el);
+      htmlLabels.push({ el, targetGroup, offsetY });
+    }
+
+    function buildLandmarks() {
+      LANDMARKS.forEach((lm, index) => {
+        const parentIsland = islandGroups.get(lm.islandId);
+        const cfg = ISLAND_CONFIG[lm.islandId];
+        const markerGroup = new THREE.Group();
+        const relX = lm.pos.x - cfg.pos.x; const relZ = lm.pos.z - cfg.pos.z;
+        markerGroup.position.set(relX, 1.2, relZ);
+
+        const mesh = createMicroLandmarkMesh(lm.archStyle, lm.grade, cfg.borderHex);
+        mesh.castShadow = true; mesh.receiveShadow = true; markerGroup.add(mesh);
+
+        const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.35, 0.12, 16), new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.0 }));
+        disc.position.y = 0.06; markerGroup.add(disc);
+
+        markerGroup.userData = { isLandmark: true, landmarkId: lm.id, disc: disc };
+        mesh.userData = { isLandmark: true, landmarkId: lm.id };
+
+        if (parentIsland) { parentIsland.add(markerGroup); } else { scene.add(markerGroup); }
+        landmarkMeshes.set(lm.id, markerGroup); interactiveObjects.push(mesh);
+        createLandmark3DLabel(lm, markerGroup, cfg.borderHex);
+      });
+    }
+
+    function createLandmark3DLabel(lm, targetGroup, borderHex) {
+      const container = document.getElementById('labels-3d-container');
+      const el = document.createElement('div');
+      const shortName = lm.title.split('-')[1] || lm.title;
+      const gradeBadgeBg = lm.grade <= 2 ? 'bg-sky-500' : lm.grade <= 4 ? 'bg-amber-500' : 'bg-indigo-600';
+      el.className = 'landmark-3d-label absolute -translate-x-1/2 -translate-y-full px-2.5 py-1 rounded-xl bg-white/95 backdrop-blur-md shadow-lg border-2 text-[11px] font-bold text-slate-800 whitespace-nowrap flex items-center gap-1.5 opacity-0 pointer-events-none';
+      el.style.borderColor = borderHex;
+      el.innerHTML = `<span class="px-1.5 py-0.5 rounded-md text-white font-black text-[10px] ${gradeBadgeBg}">${lm.gradeLabel}</span><span>${lm.icon} ${shortName}</span>`;
+      container.appendChild(el);
+      const labelData = { el, targetGroup, offsetY: 2.75, isLandmarkLabel: true, landmark: lm };
+      htmlLabels.push(labelData);
+      landmarkLabelsMap.set(lm.id, labelData);
+    }
+
+    function createMicroLandmarkMesh(archStyle, grade, borderHex) {
+      const g = new THREE.Group();
+      const roofColor = grade <= 2 ? 0x0284c7 : grade <= 4 ? 0xd97706 : 0x4f46e5;
+      if (archStyle === 'windmill') {
+        const mill = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.85, 2.0, 8), new THREE.MeshLambertMaterial({ color: 0xfffbeb, flatShading: true })); mill.position.y = 1.0; g.add(mill);
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(0.85, 0.8, 8), new THREE.MeshLambertMaterial({ color: roofColor, flatShading: true })); roof.position.y = 2.3; g.add(roof);
+        const bladeGroup = new THREE.Group(); bladeGroup.position.set(0, 1.9, 0.65);
+        for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.35, 0.04), new THREE.MeshLambertMaterial({ color: 0xfef08a })); b.rotation.z = (Math.PI / 2) * i; bladeGroup.add(b); }
+        bladeGroup.userData = { isRotatingBlades: true }; g.add(bladeGroup);
+      } else if (archStyle === 'crystal') {
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 0.4, 6), new THREE.MeshLambertMaterial({ color: 0xe2e8f0, flatShading: true })); base.position.y = 0.2; g.add(base);
+        const crystal = new THREE.Mesh(new THREE.ConeGeometry(0.65, 2.2, 5), new THREE.MeshLambertMaterial({ color: roofColor, flatShading: true })); crystal.position.y = 1.4; g.add(crystal);
+      } else if (archStyle === 'tree') {
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.6, 1.4, 6), new THREE.MeshLambertMaterial({ color: 0x78350f, flatShading: true })); trunk.position.y = 0.7; g.add(trunk);
+        const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(1.15), new THREE.MeshLambertMaterial({ color: 0x16a34a, flatShading: true })); crown.position.y = 1.9; g.add(crown);
+      } else if (archStyle === 'bridge') {
+        const arch = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.24, 6, 12, Math.PI), new THREE.MeshLambertMaterial({ color: 0xea580c, flatShading: true })); arch.position.y = 0.5; g.add(arch);
+      } else {
+        const base = new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.1, 1.25), new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true })); base.position.y = 0.55; g.add(base);
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(1.05, 1.0, 6), new THREE.MeshLambertMaterial({ color: roofColor, flatShading: true })); roof.position.y = 1.6; g.add(roof);
+      }
+      return g;
+    }
+
+    function buildResonanceLines() {
+      RESONANCE_LINES.forEach((lineDef, idx) => {
+        const fromLm = LANDMARKS.find(l => l.id === lineDef.from); const toLm = LANDMARKS.find(l => l.id === lineDef.to);
+        if (!fromLm || !toLm) return;
+        const start = new THREE.Vector3(fromLm.pos.x, fromLm.pos.y + 1.2, fromLm.pos.z); const end = new THREE.Vector3(toLm.pos.x, toLm.pos.y + 1.2, toLm.pos.z);
+        const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5); mid.y += Math.max(6.0, start.distanceTo(end) * 0.3);
+        const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+        const lineMesh = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(40)), new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.55 }));
+        lineMesh.userData = { lineId: lineDef.id, from: lineDef.from, to: lineDef.to, curve: curve };
+        const pulseMesh = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        pulseMesh.userData = { curve: curve, progress: (idx * 0.1) % 1.0, speed: 0.0032 }; lineMesh.add(pulseMesh);
+        scene.add(lineMesh); lineObjects.push(lineMesh);
+      });
+    }
+
+    function createMiniPersonMesh(shirtHex, hatHex, scale = 1.0, customOpts = {}) {
+      const charGroup = new THREE.Group();
+      const skinMat = new THREE.MeshLambertMaterial({ color: 0xfed7aa, flatShading: true });
+      const shirtMat = new THREE.MeshLambertMaterial({ color: shirtHex, flatShading: true });
+      const pantsMat = new THREE.MeshLambertMaterial({ color: customOpts.pantsHex || 0x334155, flatShading: true });
+      const hatMat = new THREE.MeshLambertMaterial({ color: hatHex, flatShading: true });
+      const packMat = new THREE.MeshLambertMaterial({ color: customOpts.packHex || 0xb45309, flatShading: true });
+
+      const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.42, 0.16), pantsMat); leftLeg.position.set(-0.11, 0.21, 0);
+      const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.42, 0.16), pantsMat); rightLeg.position.set(0.11, 0.21, 0); charGroup.add(leftLeg, rightLeg);
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 0.58, 7), shirtMat); torso.position.y = 0.68; torso.castShadow = true; charGroup.add(torso);
+      const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.42, 0.13), shirtMat); leftArm.position.set(-0.32, 0.68, 0);
+      const rightArmGroup = new THREE.Group(); rightArmGroup.position.set(0.32, 0.68, 0); const rightArmMesh = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.42, 0.13), shirtMat); rightArmGroup.add(rightArmMesh); charGroup.add(leftArm, rightArmGroup);
+      const pack = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.38, 0.2), packMat); pack.position.set(0, 0.7, -0.22); charGroup.add(pack);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 8, 8), skinMat); head.position.y = 1.18; head.castShadow = true; charGroup.add(head);
+
+      const hatGroup = new THREE.Group(); hatGroup.position.y = 1.42; charGroup.add(hatGroup);
+      const propGroup = new THREE.Group(); propGroup.position.set(0, -0.18, 0.18); rightArmGroup.add(propGroup);
+      const defaultHat = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.28, 7), hatMat); hatGroup.add(defaultHat);
+
+      let auraRing = null;
+      if (customOpts.isHero) {
+        auraRing = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.58, 16), new THREE.MeshBasicMaterial({ color: hatHex, side: THREE.DoubleSide, transparent: true, opacity: 0.75 })); auraRing.rotation.x = Math.PI / 2; auraRing.position.y = 0.04; charGroup.add(auraRing);
+      }
+      charGroup.scale.setScalar(scale);
+      charGroup.userData = { leftLeg, rightLeg, leftArm, rightArm: rightArmGroup, torso, pack, hatGroup, propGroup, auraRing, shirtMat, pantsMat, hatMat, packMat };
+      return charGroup;
+    }
+
+    function applyAvatarRoleCostume(roleName) {
+      const cfg = AVATAR_ROLE_COSTUMES[roleName] || AVATAR_ROLE_COSTUMES['自主探索者'];
+      if (!avatarMesh) return;
+      const u = avatarMesh.userData;
+      u.shirtMat.color.setHex(cfg.shirtHex); u.pantsMat.color.setHex(cfg.pantsHex); u.hatMat.color.setHex(cfg.hatHex); u.packMat.color.setHex(cfg.packHex);
+      if (u.auraRing) u.auraRing.material.color.setHex(cfg.hatHex);
+
+      while (u.hatGroup.children.length > 0) u.hatGroup.remove(u.hatGroup.children[0]);
+      while (u.propGroup.children.length > 0) u.propGroup.remove(u.propGroup.children[0]);
+
+      if (cfg.hatStyle === 'explorer') {
+        const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.05, 8), u.hatMat); const crown = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.3, 7), u.hatMat); crown.position.y = 0.15;
+        const goggles = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.1, 0.12), new THREE.MeshBasicMaterial({ color: 0x38bdf8 })); goggles.position.set(0, 0.08, 0.22); u.hatGroup.add(brim, crown, goggles);
+      } else if (cfg.hatStyle === 'student_cap') {
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(0.27, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), u.hatMat); dome.position.y = -0.05;
+        const visor = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.04, 8), u.hatMat); visor.position.set(0, -0.04, 0.06); u.hatGroup.add(dome, visor);
+      } else if (cfg.hatStyle === 'scholar') {
+        const mortarboard = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.06, 0.62), u.hatMat); mortarboard.position.y = 0.06;
+        const tassel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.28, 5), new THREE.MeshBasicMaterial({ color: 0xfacc15 })); tassel.position.set(0.26, -0.06, 0.26); u.hatGroup.add(mortarboard, tassel);
+      } else if (cfg.hatStyle === 'sunhat') {
+        const wideBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.04, 10), u.hatMat); const top = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.18, 8), u.hatMat); top.position.y = 0.1;
+        const sprout = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.25, 5), new THREE.MeshBasicMaterial({ color: 0x22c55e })); sprout.position.set(0, 0.28, 0); u.hatGroup.add(wideBrim, top, sprout);
+      }
+
+      if (cfg.propStyle === 'compass') {
+        const scope = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 0.38, 6), new THREE.MeshLambertMaterial({ color: 0xfbbf24, flatShading: true })); scope.rotation.x = Math.PI / 2; u.propGroup.add(scope);
+      } else if (cfg.propStyle === 'balloon') {
+        const stringMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.65, 4), new THREE.MeshBasicMaterial({ color: 0xffffff })); stringMesh.position.y = 0.32;
+        const balloon = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), new THREE.MeshLambertMaterial({ color: 0xf43f5e, flatShading: true })); balloon.position.y = 0.72; u.propGroup.add(stringMesh, balloon);
+      } else if (cfg.propStyle === 'staff') {
+        const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.05, 5), new THREE.MeshLambertMaterial({ color: 0xd97706, flatShading: true })); rod.position.y = 0.25;
+        const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), new THREE.MeshBasicMaterial({ color: 0xfef08a })); star.position.y = 0.85; u.propGroup.add(rod, star);
+      } else if (cfg.propStyle === 'lantern') {
+        const lantern = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), new THREE.MeshBasicMaterial({ color: 0xfb7185 })); lantern.position.y = -0.05; u.propGroup.add(lantern);
+      }
+
+      new TWEEN.Tween(avatarMesh.scale).to({ x: cfg.scale * 1.25, y: cfg.scale * 1.25, z: cfg.scale * 1.25 }, 180).yoyo(true).repeat(1).onComplete(() => { avatarMesh.scale.setScalar(cfg.scale); }).start();
+
+      if (avatarLabelObj && avatarLabelObj.el) { avatarLabelObj.el.innerHTML = `<span>${cfg.icon}</span><span>${cfg.role}</span>`; }
+      const descEl = document.getElementById('avatar-outfit-desc'); if (descEl) descEl.textContent = cfg.outfitShort;
+      const badgeEl = document.getElementById('avatar-icon-badge');
+      if (badgeEl) { badgeEl.textContent = cfg.icon; badgeEl.className = `w-10 h-10 rounded-full bg-gradient-to-tr ${cfg.badgeGradient} flex items-center justify-center text-lg shadow-md`; }
+      const roleLabelEl = document.getElementById('avatar-role-label'); if (roleLabelEl) roleLabelEl.textContent = cfg.role;
+    }
+
+    function buildAvatar() {
+      avatarMesh = createMiniPersonMesh(0xf97316, 0xfacc15, 1.18, { isHero: true });
+      avatarMesh.position.set(0, 4.8, 2.2); avatarMesh.userData.patrolAngle = 0; avatarMesh.userData.islandCenter = { x: 0, y: 4.8, z: 0 };
+      scene.add(avatarMesh);
+
+      const container = document.getElementById('labels-3d-container');
+      const avEl = document.createElement('div');
+      avEl.className = 'island-3d-label absolute -translate-x-1/2 -translate-y-full cursor-pointer px-2.5 py-0.5 rounded-full bg-amber-500 text-white shadow-lg border-2 border-white text-[10px] font-black whitespace-nowrap flex items-center gap-1';
+      avEl.innerHTML = `<span>🎒</span><span>自主探索者</span>`; avEl.title = '點擊更換天空旅人身分與 3D 定裝';
+      avEl.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('avatar-modal').classList.remove('hidden'); });
+      container.appendChild(avEl);
+      avatarLabelObj = { el: avEl, targetGroup: avatarMesh, offsetY: 2.35 }; htmlLabels.push(avatarLabelObj);
+      applyAvatarRoleCostume(STATE.avatarRole);
+
+      const npcPalette = [ { shirt: 0x0ea5e9, hat: 0xfef08a }, { shirt: 0xec4899, hat: 0xffffff }, { shirt: 0x10b981, hat: 0xfde047 }, { shirt: 0x8b5cf6, hat: 0xfdba74 }, { shirt: 0xf43f5e, hat: 0xbae6fd }, { shirt: 0xf59e0b, hat: 0x38bdf8 } ];
+      let pIdx = 0;
+      Object.values(ISLAND_CONFIG).forEach((cfg) => {
+        const islandGroup = islandGroups.get(cfg.id); if (!islandGroup) return;
+        for (let w = 0; w < 2; w++) {
+          const pal = npcPalette[pIdx % npcPalette.length]; pIdx++;
+          const npc = createMiniPersonMesh(pal.shirt, pal.hat, 0.92);
+          const walkRadius = cfg.id === 'inner_lake' ? (3.2 + w * 1.1) : (3.4 + w * 1.1);
+          const startAngle = w * Math.PI + pIdx * 0.7; const speed = (w % 2 === 0 ? 1 : -1) * (0.42 + (pIdx % 3) * 0.08);
+          npc.position.set(Math.cos(startAngle) * walkRadius, 1.25, Math.sin(startAngle) * walkRadius); islandGroup.add(npc);
+          npcWalkers.push({ mesh: npc, mode: 'circle', radius: walkRadius, angle: startAngle, speed: speed, baseY: 1.25, phase: pIdx * 1.3 });
+        }
+      });
+
+      bridgeCurves.forEach((curve, bIdx) => {
+        const pal = npcPalette[(bIdx + 2) % npcPalette.length];
+        const bridgeWalker = createMiniPersonMesh(pal.shirt, pal.hat, 0.85); scene.add(bridgeWalker);
+        npcWalkers.push({ mesh: bridgeWalker, mode: 'bridge', curve: curve, t: (bIdx * 0.2) % 1.0, dir: bIdx % 2 === 0 ? 1 : -1, speed: 0.14 + (bIdx % 3) * 0.03, phase: bIdx * 2.1 });
+      });
+    }
+
+    // =========================================================================
+    // 3. 互動導覽與即時體驗模組渲染
+    // =========================================================================
+    function renderCourseDirectory() {
+      const container = document.getElementById('directory-list-container');
+      const orderedIslands = ['self_awareness', 'self_management', 'social_awareness', 'relationship', 'decision'];
+      const coreCfg = ISLAND_CONFIG.inner_lake;
+      let html = `
+        <div class="rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-white to-sky-50 p-3 shadow-sm space-y-1.5">
+          <div class="flex items-center justify-between"><span class="text-xs font-black text-amber-900 flex items-center gap-1">🏰 ${coreCfg.name}</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 font-bold">總覽中心</span></div>
+          <p class="text-[11px] text-slate-600 leading-relaxed">${coreCfg.desc}</p>
+          <div class="flex gap-1.5 pt-1">
+            <a href="${BASE_SITE_URL}" target="_blank" rel="noopener noreferrer" class="flex-1 py-1.5 px-2 rounded-xl bg-white hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-[11px] text-center transition">🌐 漚汪 SEL 首頁 ↗</a>
+            <a href="${coreCfg.url}" target="_blank" rel="noopener noreferrer" class="flex-1 py-1.5 px-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] text-center shadow-sm transition">📋 課程學習架構 ↗</a>
+          </div>
+        </div>
+      `;
+      orderedIslands.forEach(islandId => {
+        const cfg = ISLAND_CONFIG[islandId];
+        const nodes = LANDMARKS.filter(l => {
+          if (l.islandId !== islandId) return false;
+          if (STATE.gradeFilter !== 'all' && l.gradeBand !== STATE.gradeFilter) return false;
+          return true;
+        });
+        if (nodes.length === 0) return;
+
+        html += `
+          <div class="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-sm">
+            <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 cursor-pointer hover:bg-amber-50/50 transition dir-island-header" data-island="${islandId}">
+              <div class="flex items-center justify-between"><span class="text-xs font-black text-slate-800">${cfg.name}｜${cfg.competency.split(' ')[0]}</span><span class="text-[10px] px-1.5 py-0.5 rounded bg-white text-slate-500 border border-slate-200">${nodes.length} 課</span></div>
+              <div class="text-[10px] text-amber-800 font-semibold mt-1 truncate">${cfg.heroName}</div>
+              <div class="text-[10px] text-emerald-700 truncate">${cfg.floraName}</div>
+            </div>
+            <div class="p-1.5 space-y-1">
+              ${nodes.map(n => {
+                const isDone = STATE.completedLandmarks.has(n.id); const isSelected = STATE.selectedLandmark && STATE.selectedLandmark.id === n.id;
+                return `
+                  <div class="dir-node-item px-2.5 py-1.5 rounded-xl text-xs flex items-center justify-between cursor-pointer transition ${isSelected ? 'bg-amber-100 text-amber-950 font-bold' : 'hover:bg-slate-100 text-slate-700'}" data-node="${n.id}">
+                    <div class="flex items-center gap-2 min-w-0"><span>${n.icon}</span><span class="truncate">${n.title}</span></div>
+                    <span class="text-[10px] flex-shrink-0 ${isDone ? 'text-emerald-600 font-bold' : 'text-slate-400'}">${isDone ? '✓ 已集章' : '探索 ➔'}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html || '<p class="text-xs text-slate-400 text-center py-6">找不到符合條件的年級課程</p>';
+      container.querySelectorAll('.dir-island-header').forEach(el => { el.addEventListener('click', () => flyToIsland(el.dataset.island)); });
+      container.querySelectorAll('.dir-node-item').forEach(el => { el.addEventListener('click', () => selectLandmark(el.dataset.node, true)); });
+    }
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    function onPointerMove(e) {
+      if (e.target.closest('#landmark-drawer, #course-directory-panel, header, .pointer-events-auto, .island-3d-label, .landmark-3d-label')) {
+        document.body.style.cursor = 'default'; return;
+      }
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactiveObjects, true);
+      let hoveredLm = null;
+
+      if (intersects.length > 0) {
+        let hitObj = intersects[0].object;
+        while (hitObj && !hitObj.userData.isLandmark && !hitObj.userData.isIsland && hitObj.parent) { hitObj = hitObj.parent; }
+        if (hitObj && hitObj.userData.isLandmark) hoveredLm = LANDMARKS.find(l => l.id === hitObj.userData.landmarkId);
+      }
+
+      if (hoveredLm) {
+        document.body.style.cursor = 'pointer';
+      } else {
+        document.body.style.cursor = 'default';
+      }
+
+      if (hoveredLm) {
+        if (STATE.hoveredLandmarkId !== hoveredLm.id) {
+          if (STATE.hoveredLandmarkId && landmarkMeshes.has(STATE.hoveredLandmarkId)) {
+            const prevMesh = landmarkMeshes.get(STATE.hoveredLandmarkId);
+            if (!STATE.selectedLandmark || STATE.selectedLandmark.id !== STATE.hoveredLandmarkId) { prevMesh.userData.disc.material.opacity = 0.0; }
+            prevMesh.scale.setScalar(1.0);
+          }
+          STATE.hoveredLandmarkId = hoveredLm.id;
+          const curMesh = landmarkMeshes.get(hoveredLm.id);
+          if (curMesh) { curMesh.userData.disc.material.opacity = 0.75; curMesh.scale.setScalar(1.18); }
+        }
+      } else {
+        if (STATE.hoveredLandmarkId && landmarkMeshes.has(STATE.hoveredLandmarkId)) {
+          const prevMesh = landmarkMeshes.get(STATE.hoveredLandmarkId);
+          if (!STATE.selectedLandmark || STATE.selectedLandmark.id !== STATE.hoveredLandmarkId) { prevMesh.userData.disc.material.opacity = 0.0; }
+          prevMesh.scale.setScalar(1.0);
+        }
+        STATE.hoveredLandmarkId = null;
+      }
+    }
+
+    function onPointerDown(e) {
+      if (e.target.closest('#landmark-drawer, #course-directory-panel, header, .pointer-events-auto, .island-3d-label, .landmark-3d-label')) return;
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactiveObjects, true);
+      
+      if (intersects.length > 0) {
+        let hitObj = intersects[0].object;
+        while (hitObj && !hitObj.userData.isLandmark && !hitObj.userData.isIsland && hitObj.parent) { hitObj = hitObj.parent; }
+        
+        if (hitObj && hitObj.userData.isLandmark) {
+          if (STATE.hoveredLandmarkId && landmarkMeshes.has(STATE.hoveredLandmarkId)) { landmarkMeshes.get(STATE.hoveredLandmarkId).scale.setScalar(1.0); }
+          STATE.hoveredLandmarkId = null;
+          selectLandmark(hitObj.userData.landmarkId, true);
+        } else if (hitObj && hitObj.userData.isIsland) {
+          flyToIsland(hitObj.userData.islandId);
+        }
+      }
+    }
+
+    function selectLandmark(id, shouldFly = true) {
+      const lm = LANDMARKS.find(l => l.id === id); if (!lm) return;
+      STATE.hoveredLandmarkId = null; STATE.selectedLandmark = lm; playChime(640, 'triangle', 0.45);
+      landmarkMeshes.forEach((mesh, lId) => { mesh.userData.disc.material.opacity = lId === id ? 0.95 : 0.0; });
+      updateLineHighlights(id); moveAvatarTo(lm.pos.x + 1.0, lm.pos.y, lm.pos.z + 1.0, lm.islandId);
+      renderDrawerContent(lm); renderCourseDirectory();
+      document.getElementById('landmark-drawer').classList.remove('translate-x-full');
+      if (shouldFly) flyCameraTo(lm.pos.x, lm.pos.y + 1.5, lm.pos.z, 19);
+    }
+
+    function updateLineHighlights(activeNodeId) {
+      lineObjects.forEach(l => {
+        const isConnected = l.userData.from === activeNodeId || l.userData.to === activeNodeId;
+        if (STATE.lineMode === 'focus') { l.material.opacity = isConnected ? 1.0 : 0.08; l.material.color.setHex(isConnected ? 0xf59e0b : 0x94a3b8); }
+        else { l.material.opacity = isConnected ? 1.0 : 0.5; l.material.color.setHex(isConnected ? 0xfbbf24 : 0xf59e0b); }
+      });
+    }
+
+    function flyCameraTo(tx, ty, tz, dist = 26) {
+      new TWEEN.Tween(controls.target).to({ x: tx, y: ty, z: tz }, 950).easing(TWEEN.Easing.Cubic.Out).start();
+      const offset = new THREE.Vector3(dist, dist * 0.82, dist);
+      new TWEEN.Tween(camera.position).to({ x: tx + offset.x, y: ty + offset.y, z: tz + offset.z }, 950).easing(TWEEN.Easing.Cubic.Out).start();
+    }
+
+    function openAllCoursesPanel() {
+      const dirPanel = document.getElementById('course-directory-panel');
+      STATE.directoryOpen = true; STATE.gradeFilter = 'all';
+      document.querySelectorAll('.grade-filter-btn').forEach(x => { x.className = x.dataset.grade === 'all' ? 'grade-filter-btn flex-1 py-1 rounded-lg bg-amber-500 text-white shadow-sm transition' : 'grade-filter-btn flex-1 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition'; });
+      renderCourseDirectory(); dirPanel.classList.remove('-translate-x-[120%]');
+      const listContainer = document.getElementById('directory-list-container'); if (listContainer) listContainer.scrollTop = 0;
+    }
+
+    function flyToIsland(islandId) {
+      STATE.activeIsland = islandId; playChime(480, 'sine', 0.35);
+      if (islandId === 'all') { flyCameraTo(0, 2, 0, 50); } else {
+        const cfg = ISLAND_CONFIG[islandId];
+        if (cfg) { flyCameraTo(cfg.pos.x, cfg.pos.y + 1.5, cfg.pos.z, 26); moveAvatarTo(cfg.pos.x, cfg.pos.y + 1.3, cfg.pos.z + 2, islandId); }
+        if (islandId === 'inner_lake') { openAllCoursesPanel(); showToast('🏰 已展開【天空之心】30個課程！'); }
+      }
+      document.querySelectorAll('.nav-island-btn').forEach(btn => {
+        const match = btn.dataset.island === islandId;
+        btn.className = match ? 'nav-island-btn px-3 py-1.5 rounded-xl text-xs font-bold transition bg-indigo-600 text-white shadow-sm' : 'nav-island-btn px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition';
+      });
+    }
+
+    function moveAvatarTo(x, y, z, islandId) {
+      if (!avatarMesh) return;
+      avatarMesh.userData.islandCenter = { x: x, y: y, z: z };
+      new TWEEN.Tween(avatarMesh.position).to({ x: x, y: y, z: z }, 650).easing(TWEEN.Easing.Quadratic.Out).start();
+      const cfg = ISLAND_CONFIG[islandId];
+      if (cfg) {
+        const locEl = document.getElementById('avatar-location-text');
+        if (locEl) locEl.textContent = `正在${cfg.name}漫步...`;
+      }
+    }
+
+    function renderDrawerContent(lm) {
+      const cfg = ISLAND_CONFIG[lm.islandId] || ISLAND_CONFIG.self_awareness;
+      document.getElementById('drawer-island-badge').textContent = cfg.competency.split(' ')[0];
+      document.getElementById('drawer-grade-badge').textContent = lm.gradeLabel;
+      document.getElementById('drawer-id-badge').textContent = lm.id.toUpperCase();
+      document.getElementById('drawer-icon').textContent = lm.icon;
+      document.getElementById('drawer-title').textContent = lm.title;
+      document.getElementById('drawer-subtitle').textContent = lm.subtitle;
+      document.getElementById('drawer-desc').textContent = lm.desc;
+      document.getElementById('drawer-url-title').textContent = `漚汪 SEL 學習網｜${lm.title}`;
+      document.getElementById('drawer-external-link').href = lm.url;
+
+      const isDone = STATE.completedLandmarks.has(lm.id);
+      const checkinBtn = document.getElementById('btn-checkin');
+      const checkinText = document.getElementById('btn-checkin-text');
+      if (isDone) {
+        checkinBtn.className = 'flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2';
+        checkinText.textContent = '✓ 已完成此年級基地集章';
+      } else {
+        checkinBtn.className = 'flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold text-xs shadow-md shadow-amber-200 transition active:scale-95 flex items-center justify-center gap-2';
+        checkinText.textContent = '✨ 完成此處心靈探索';
+      }
+
+      document.getElementById('drawer-interactive-widget').innerHTML = generateToolHTML(lm);
+      wireToolInteractions(lm);
+
+      const siblingsContainer = document.getElementById('drawer-island-siblings');
+      const siblings = LANDMARKS.filter(x => x.islandId === lm.islandId);
+      siblingsContainer.innerHTML = siblings.map(s => `
+        <button class="sibling-jump-btn p-2 rounded-xl border text-left text-[11px] transition flex items-center gap-1.5 ${s.id === lm.id ? 'border-amber-400 bg-amber-50 font-black text-amber-900' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}" data-target="${s.id}">
+          <span>${s.icon}</span><span class="truncate">${s.title}</span>
+        </button>
+      `).join('');
+      siblingsContainer.querySelectorAll('.sibling-jump-btn').forEach(b => { b.addEventListener('click', () => selectLandmark(b.dataset.target, true)); });
+
+      const linesContainer = document.getElementById('drawer-connected-lines');
+      const connected = RESONANCE_LINES.filter(l => l.from === lm.id || l.to === lm.id);
+      if (connected.length === 0) { linesContainer.innerHTML = '<p class="text-xs text-slate-400">可點選上方同島嶼年級基地或切換浮空島探索。</p>'; } else {
+        linesContainer.innerHTML = connected.map(l => {
+          const otherId = l.from === lm.id ? l.to : l.from; const otherLm = LANDMARKS.find(x => x.id === otherId);
+          return `
+            <div class="line-jump-card p-2.5 rounded-xl bg-amber-50/60 border border-amber-200/80 hover:border-amber-400 transition cursor-pointer space-y-1" data-target="${otherId}">
+              <div class="flex items-center justify-between text-xs"><span class="text-amber-800 font-bold">🌈 ${l.title}</span><span class="text-indigo-600 font-bold text-[10px]">飛往 ${otherLm ? otherLm.title : ''} ➔</span></div>
+              <p class="text-[11px] text-slate-600">${l.desc}</p>
+            </div>
+          `;
+        }).join('');
+        linesContainer.querySelectorAll('.line-jump-card').forEach(card => { card.addEventListener('click', () => selectLandmark(card.dataset.target, true)); });
+      }
+    }
+
+    function generateToolHTML(lm) {
+      if (lm.toolType === 'default') {
+        return `
+          <div class="space-y-2 text-xs">
+            <h5 class="font-bold text-slate-800">💡 ${lm.title} 課堂互動練習：</h5>
+            <p class="text-[11px] text-slate-600 leading-relaxed">點擊上方「前往網頁 ↗」可開啟漚汪國小 SEL 學習網該年級完整教材與課堂活動單，完成練習後可點擊下方按鈕集章！</p>
+          </div>
+        `;
+      }
+      return `
+          <div class="space-y-2 text-xs">
+            <h5 class="font-bold text-slate-800">💡 ${lm.title} 課堂活動：</h5>
+            <p class="text-[11px] text-slate-600 leading-relaxed">請配合教師引導，點擊上方連結進入「漚汪 SEL 學習網」完成互動任務並集章！</p>
+          </div>
+      `;
+    }
+
+    function wireToolInteractions(lm) {
+      // Basic interactive wiring if needed
+    }
+
+    function applySkyBackgroundColor(hexStr, duration = 600) {
+      const targetColor = new THREE.Color(hexStr);
+      new TWEEN.Tween(scene.background).to(targetColor, duration).start();
+      new TWEEN.Tween(scene.fog.color).to(targetColor, duration).start();
+      const picker = document.getElementById('custom-bg-picker'); if (picker) picker.value = hexStr;
+      document.querySelectorAll('.bg-swatch-btn').forEach(btn => {
+        if (btn.dataset.color.toLowerCase() === hexStr.toLowerCase()) { btn.classList.add('ring-2', 'ring-indigo-500'); } else { btn.classList.remove('ring-2', 'ring-indigo-500'); }
+      });
+    }
+
+    function setTimeOfDay(mode) {
+      STATE.timeOfDay = mode;
+      const duration = 900;
+      let targetHex, targetDir, targetDirIntensity, targetAmbIntensity;
+      if (mode === 'day') { targetHex = '#5b8fb9'; targetDir = new THREE.Color(0xfff7ed); targetDirIntensity = 0.85; targetAmbIntensity = 0.58; }
+      else if (mode === 'sunset') { targetHex = '#6d597a'; targetDir = new THREE.Color(0xfb923c); targetDirIntensity = 0.92; targetAmbIntensity = 0.52; }
+      else { targetHex = '#1e293b'; targetDir = new THREE.Color(0x818cf8); targetDirIntensity = 0.48; targetAmbIntensity = 0.38; }
+
+      applySkyBackgroundColor(targetHex, duration);
+      new TWEEN.Tween(dirLight.color).to(targetDir, duration).start();
+      new TWEEN.Tween(dirLight).to({ intensity: targetDirIntensity }, duration).start();
+      new TWEEN.Tween(ambientLight).to({ intensity: targetAmbIntensity }, duration).start();
+    }
+
+    function showToast(msg, icon = '✨') {
+      const toast = document.getElementById('toast-notify'); if (!toast) return;
+      document.getElementById('toast-msg').textContent = msg; document.getElementById('toast-icon').textContent = icon;
+      toast.classList.remove('opacity-0', '-translate-y-2');
+      setTimeout(() => { toast.classList.add('opacity-0', '-translate-y-2'); }, 2600);
+    }
+
+    function setupUIEvents() {
+      document.getElementById('btn-time-day')?.addEventListener('click', () => setTimeOfDay('day'));
+      document.getElementById('btn-time-sunset')?.addEventListener('click', () => setTimeOfDay('sunset'));
+      document.getElementById('btn-time-night')?.addEventListener('click', () => setTimeOfDay('night'));
+      document.getElementById('btn-reset-cam')?.addEventListener('click', () => flyToIsland('all'));
+
+      const dirPanel = document.getElementById('course-directory-panel');
+      document.getElementById('btn-close-directory')?.addEventListener('click', () => { STATE.directoryOpen = false; dirPanel?.classList.add('-translate-x-[120%]'); });
+
+      document.querySelectorAll('.grade-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          STATE.gradeFilter = btn.dataset.grade;
+          document.querySelectorAll('.grade-filter-btn').forEach(x => { x.className = x.dataset.grade === STATE.gradeFilter ? 'grade-filter-btn flex-1 py-1 rounded-lg bg-amber-500 text-white shadow-sm transition' : 'grade-filter-btn flex-1 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition'; });
+          renderCourseDirectory();
+        });
+      });
+
+      document.getElementById('btn-audio-toggle')?.addEventListener('click', () => {
+        STATE.audioMuted = !STATE.audioMuted; const audioIcon = document.getElementById('audio-icon'); if (audioIcon) audioIcon.textContent = STATE.audioMuted ? '🔇' : '🔔';
+        showToast(STATE.audioMuted ? '音效已靜音' : '天空風鈴音效已開啟'); if (!STATE.audioMuted) playChime(520, 'sine', 0.4);
+      });
+
+      document.querySelectorAll('.nav-island-btn').forEach(btn => { btn.addEventListener('click', () => flyToIsland(btn.dataset.island)); });
+
+      document.getElementById('btn-toggle-lines')?.addEventListener('click', () => {
+        STATE.lineMode = 'all'; lineObjects.forEach(l => { l.material.opacity = 0.55; l.material.color.setHex(0xf59e0b); }); showToast('已顯示全部 10 條跨島能量航線');
+      });
+      document.getElementById('btn-line-focus-only')?.addEventListener('click', () => {
+        STATE.lineMode = 'focus'; if (STATE.selectedLandmark) { updateLineHighlights(STATE.selectedLandmark.id); } else { lineObjects.forEach(l => l.material.opacity = 0.1); } showToast('已切換為僅高亮選取航線');
+      });
+
+      document.getElementById('btn-close-drawer')?.addEventListener('click', () => { document.getElementById('landmark-drawer')?.classList.add('translate-x-full'); });
+      document.getElementById('btn-focus-cam')?.addEventListener('click', () => { if (STATE.selectedLandmark) { flyCameraTo(STATE.selectedLandmark.pos.x, STATE.selectedLandmark.pos.y + 1.5, STATE.selectedLandmark.pos.z, 17); } });
+
+      document.getElementById('btn-close-virtue-modal')?.addEventListener('click', () => { 
+        document.getElementById('virtue-unlock-modal')?.classList.add('hidden'); 
+      });
+
+      document.getElementById('btn-checkin')?.addEventListener('click', () => {
+        if (!STATE.selectedLandmark) return;
+        const wasCompleted = STATE.completedLandmarks.has(STATE.selectedLandmark.id);
+        STATE.completedLandmarks.add(STATE.selectedLandmark.id);
+        const count = STATE.completedLandmarks.size;
+        
+        const progText = document.getElementById('progress-text'); if (progText) progText.textContent = `${count} / 30`;
+        const progFill = document.getElementById('progress-bar-fill'); if (progFill) progFill.style.width = `${(count / 30) * 100}%`;
+
+        const checkinText = document.getElementById('btn-checkin-text'); if (checkinText) checkinText.textContent = '✓ 已完成此年級基地集章';
+        const checkinBtn = document.getElementById('btn-checkin'); if (checkinBtn) checkinBtn.className = 'flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2';
+        
+        renderCourseDirectory();
+        
+        if (!wasCompleted) {
+          playChime(880, 'sine', 0.5);
+          showToast(`🎉 恭喜完成【${STATE.selectedLandmark.title}】探索集章！`);
+          
+          const virtue = Object.values(VIRTUE_CONFIG).find(v => v.node === STATE.selectedLandmark.id);
+          if(virtue && !STATE.unlockedVirtues.has(virtue.id)) {
+            STATE.unlockedVirtues.add(virtue.id);
+            setTimeout(() => {
+              illuminateVirtueStone(virtue.id);
+              const vModal = document.getElementById('virtue-unlock-modal');
+              if (vModal) {
+                document.getElementById('virtue-unlock-icon').textContent = virtue.icon;
+                document.getElementById('virtue-unlock-name').textContent = virtue.id;
+                document.getElementById('virtue-unlock-desc').textContent = virtue.desc;
+                vModal.classList.remove('hidden');
+              }
+            }, 800);
+          }
+
+          updateMedalUI(count, true);
+        }
+      });
+
+      const avatarModal = document.getElementById('avatar-modal');
+      document.getElementById('btn-change-avatar')?.addEventListener('click', (e) => { e.stopPropagation(); avatarModal?.classList.remove('hidden'); });
+      document.getElementById('avatar-hud-card')?.addEventListener('click', () => { avatarModal?.classList.remove('hidden'); });
+      document.getElementById('btn-close-avatar-modal')?.addEventListener('click', () => avatarModal?.classList.add('hidden'));
+
+      document.querySelectorAll('.avatar-role-opt').forEach(opt => {
+        opt.addEventListener('click', () => {
+          document.querySelectorAll('.avatar-role-opt').forEach(x => { x.className = 'avatar-role-opt p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-left transition'; });
+          opt.className = 'avatar-role-opt p-2.5 rounded-xl border-2 border-indigo-500 bg-indigo-50 text-indigo-900 font-bold text-left transition';
+          STATE.avatarRole = opt.dataset.role; STATE.avatarIcon = opt.dataset.icon;
+          const cfg = AVATAR_ROLE_COSTUMES[STATE.avatarRole] || AVATAR_ROLE_COSTUMES['自主探索者'];
+          const previewEl = document.getElementById('modal-avatar-preview'); if (previewEl) { previewEl.textContent = cfg.icon; previewEl.className = `w-16 h-16 rounded-2xl bg-gradient-to-tr ${cfg.badgeGradient} flex items-center justify-center text-3xl shadow-lg flex-shrink-0`; }
+          const roleTitleEl = document.getElementById('modal-role-title'); if (roleTitleEl) roleTitleEl.textContent = cfg.role;
+          const outfitDetailEl = document.getElementById('modal-outfit-detail'); if (outfitDetailEl) outfitDetailEl.textContent = cfg.outfitDetail;
+          applyAvatarRoleCostume(STATE.avatarRole); playChime(580, 'sine', 0.25);
+        });
+      });
+
+      document.getElementById('btn-save-avatar')?.addEventListener('click', () => { applyAvatarRoleCostume(STATE.avatarRole); avatarModal?.classList.add('hidden'); const cfg = AVATAR_ROLE_COSTUMES[STATE.avatarRole] || AVATAR_ROLE_COSTUMES['自主探索者']; showToast(`✨ 已完成【${cfg.role}】3D 定裝（${cfg.outfitShort.replace('定裝：', '')}），出發闖關！`); playChime(720, 'triangle', 0.45); });
+
+      const medalModal = document.getElementById('medal-modal');
+      document.getElementById('btn-medal-modal')?.addEventListener('click', () => { updateMedalUI(STATE.completedLandmarks.size, false); medalModal?.classList.remove('hidden'); });
+      document.getElementById('btn-close-medal-modal')?.addEventListener('click', () => medalModal?.classList.add('hidden'));
+      document.getElementById('btn-confirm-medal')?.addEventListener('click', () => medalModal?.classList.add('hidden'));
+    }
+
+    function updateMedalUI(count, justUnlocked = false) {
+      const display = document.getElementById('current-medal-display');
+      const medalGrid = document.getElementById('medal-grid');
+      const virtueGrid = document.getElementById('virtue-grid');
+
+      let currentMedal = null;
+      let nextTarget = 5;
+
+      for (let i = 0; i < MEDAL_MILESTONES.length; i++) {
+        if (count >= MEDAL_MILESTONES[i].count) { currentMedal = MEDAL_MILESTONES[i]; nextTarget = MEDAL_MILESTONES[i + 1] ? MEDAL_MILESTONES[i + 1].count : null; } else { break; }
+      }
+
+      if (display) {
+        if (currentMedal) {
+          if (nextTarget) { display.innerHTML = `<span class="text-amber-600 font-bold">${currentMedal.icon} ${currentMedal.name}勳章</span> <span class="text-slate-400"> (下個: 缺 ${nextTarget - count})</span>`; } 
+          else { display.innerHTML = `<span class="text-indigo-600 font-black">👑 榮耀滿滿：天空守護者！</span>`; }
+        } else {
+          display.innerHTML = `<span>🌱 尚無獎章 <span class="text-slate-400">(距離解鎖: 缺 ${5 - count})</span></span>`;
+        }
+      }
+
+      // Render Medals
+      if (medalGrid) {
+        medalGrid.innerHTML = MEDAL_MILESTONES.map(m => {
+          const unlocked = count >= m.count;
+          return `
+            <div class="p-2.5 rounded-xl border ${unlocked ? 'bg-amber-50 border-amber-300 shadow-sm' : 'bg-slate-50 border-slate-200 opacity-60'} flex flex-col items-center text-center gap-1 transition-all relative overflow-hidden">
+              ${unlocked ? '<div class="absolute -top-4 -right-4 w-10 h-10 bg-gradient-to-br from-amber-200 to-orange-100 rounded-full opacity-50"></div>' : ''}
+              <div class="text-3xl relative z-10 ${!unlocked ? 'grayscale opacity-50' : 'drop-shadow-md'}">${m.icon}</div>
+              <div class="text-[11px] font-black z-10 ${unlocked ? 'text-amber-900' : 'text-slate-500'}">${m.name}</div>
+              <div class="text-[9px] font-bold px-2 py-0.5 rounded-full z-10 ${unlocked ? 'bg-gradient-to-r from-amber-400 to-orange-400 text-white shadow-sm' : 'bg-slate-200 text-slate-500'} mt-1">${m.count} 章解鎖</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Virtues
+      if(virtueGrid) {
+        virtueGrid.innerHTML = Object.values(VIRTUE_CONFIG).map(v => {
+          const unlocked = STATE.unlockedVirtues.has(v.id);
+          return `
+            <div class="flex flex-col items-center text-center gap-1 p-2 rounded-xl border ${unlocked ? 'bg-white border-amber-300 shadow-md transform hover:scale-105 transition cursor-help' : 'bg-slate-100 border-slate-200 opacity-50'}" title="${unlocked ? v.desc : '完成特定基地課程解鎖此美德'}">
+              <div class="text-2xl">${unlocked ? v.icon : '❓'}</div>
+              <div class="text-[10px] font-bold ${unlocked ? 'text-slate-800' : 'text-slate-400'}">${v.id}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      if (justUnlocked && currentMedal && count === currentMedal.count) {
+        showToast(`🏆 恭喜解鎖【${currentMedal.name}勳章】！`, currentMedal.icon);
+        playChime(920, 'triangle', 0.6); 
+        document.getElementById('medal-modal').classList.remove('hidden');
+      }
+    }
+
+    function update3DLabelsProjection() {
+      const halfW = window.innerWidth / 2;
+      const halfH = window.innerHeight / 2;
+      const tempV = new THREE.Vector3();
+
+      htmlLabels.forEach(item => {
+        item.targetGroup.getWorldPosition(tempV);
+        tempV.y += item.offsetY;
+        tempV.project(camera);
+
+        if (tempV.z > 1) {
+          item.el.style.display = 'none';
+          return;
+        }
+
+        const x = tempV.x * halfW + halfW;
+        const y = -(tempV.y * halfH) + halfH;
+        item.el.style.display = 'flex';
+        item.el.style.left = `${x}px`;
+        item.el.style.top = `${y}px`;
+
+        if (item.isLandmarkLabel) {
+          const lm = item.landmark;
+          const isHovered = STATE.hoveredLandmarkId === lm.id;
+          if (isHovered) { item.el.style.opacity = '1'; item.el.classList.add('ring-2', 'ring-amber-400', 'scale-105'); } 
+          else { item.el.style.opacity = '0'; item.el.classList.remove('ring-2', 'ring-amber-400', 'scale-105'); }
+        }
+      });
+    }
+
+    function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
+
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      TWEEN.update();
+
+      const time = clock.getElapsedTime();
+
+      islandGroups.forEach(group => {
+        const u = group.userData;
+        group.position.y = u.baseY + Math.sin(time * u.floatSpeed + u.floatPhase) * 0.42;
+        group.traverse(child => {
+          if (child.userData.isRotatingBlades) { child.rotation.z = time * 1.8; } 
+          else if (child.userData.isHeroPrism) { child.rotation.y = time * 1.1; child.position.y = 3.8 + Math.sin(time * 2.2) * 0.25; } 
+          else if (child.userData.isAstrolabe) { child.rotation.y = time * 0.9; child.rotation.z = Math.sin(time * 0.7) * 0.3; } 
+          else if (child.userData.isBalanceScale) { child.rotation.z = Math.sin(time * 1.5) * 0.16; } 
+          else if (child.userData.isCampfire) { child.scale.y = 1.0 + Math.sin(time * 10.0) * 0.18; } 
+          else if (child.userData.isSwayingPlant) { child.rotation.z = Math.sin(time * 1.6 + child.userData.phase) * 0.045; } 
+        });
+      });
+
+      cloudClusters.forEach(cloud => {
+        const u = cloud.userData;
+        cloud.position.x = u.baseX + Math.sin(time * u.speed + u.phase) * 2.5;
+        cloud.position.y = u.baseY + Math.cos(time * u.speed * 0.8 + u.phase) * 0.35;
+      });
+
+      landmarkMeshes.forEach(mesh => {
+        mesh.traverse(child => { if (child.userData.isRotatingBlades) { child.rotation.z = time * 2.0; } });
+      });
+
+      lineObjects.forEach(lineMesh => {
+        lineMesh.children.forEach(pulse => {
+          pulse.userData.progress += pulse.userData.speed;
+          if (pulse.userData.progress > 1.0) pulse.userData.progress = 0.0;
+          const pos = pulse.userData.curve.getPoint(pulse.userData.progress); pulse.position.copy(pos);
+        });
+      });
+
+      npcWalkers.forEach(w => {
+        const m = w.mesh; const limbs = m.userData; const swing = Math.sin(time * 9.0 + w.phase) * 0.55;
+        if (limbs.leftLeg) { limbs.leftLeg.rotation.x = swing; limbs.rightLeg.rotation.x = -swing; limbs.leftArm.rotation.x = -swing * 0.8; limbs.rightArm.rotation.x = swing * 0.8; }
+        if (w.mode === 'circle') {
+          w.angle += w.speed * 0.016; const nx = Math.cos(w.angle) * w.radius; const nz = Math.sin(w.angle) * w.radius; const hop = Math.abs(Math.sin(time * 9.0 + w.phase)) * 0.08;
+          m.position.set(nx, w.baseY + hop, nz); const tangentAngle = w.angle + (w.speed > 0 ? Math.PI / 2 : -Math.PI / 2); m.rotation.y = -tangentAngle + Math.PI / 2;
+        } else if (w.mode === 'bridge') {
+          w.t += w.dir * w.speed * 0.016; if (w.t > 0.95) { w.t = 0.95; w.dir = -1; } if (w.t < 0.05) { w.t = 0.05; w.dir = 1; }
+          const pt = w.curve.getPoint(w.t); const nextPt = w.curve.getPoint(Math.min(1, Math.max(0, w.t + w.dir * 0.02))); const hop = Math.abs(Math.sin(time * 9.0 + w.phase)) * 0.07;
+          m.position.set(pt.x, pt.y + 0.35 + hop, pt.z); m.lookAt(nextPt.x, m.position.y, nextPt.z);
+        }
+      });
+
+      animalList.forEach(a => {
+        const m = a.mesh; a.angle += a.speed * 0.016;
+        if (a.isFlying) {
+          m.position.x = Math.cos(a.angle) * a.r; m.position.z = Math.sin(a.angle) * a.r; m.position.y = a.baseY + Math.sin(time * 3 + a.angle) * 0.8; m.rotation.y = -a.angle;
+          m.userData.wingL.rotation.z = Math.sin(time * 15) * 0.6; m.userData.wingR.rotation.z = -Math.sin(time * 15) * 0.6;
+        } else {
+          m.position.x = Math.cos(a.angle) * a.r; m.position.z = Math.sin(a.angle) * a.r; m.rotation.y = -a.angle + Math.PI / 2; const hop = Math.abs(Math.sin(time * 6 + a.angle)) * 0.06; m.position.y = a.baseY + hop;
+          if (m.userData.tail) { m.userData.tail.rotation.y = Math.sin(time * 8) * 0.3; }
+        }
+      });
+
+      animatedPillars.forEach(p => {
+        p.mat.opacity = 0.6 + Math.sin(time * 2 + p.phase) * 0.2;
+      });
+
+      if (avatarMesh && avatarMesh.userData.islandCenter) {
+        const c = avatarMesh.userData.islandCenter; avatarMesh.userData.patrolAngle = (avatarMesh.userData.patrolAngle || 0) + 0.012; const pa = avatarMesh.userData.patrolAngle;
+        avatarMesh.position.x = c.x + Math.cos(pa) * 0.9; avatarMesh.position.z = c.z + Math.sin(pa) * 0.9; avatarMesh.position.y = c.y + Math.abs(Math.sin(time * 7.5)) * 0.09; avatarMesh.rotation.y = -pa;
+        const al = avatarMesh.userData;
+        if (al.leftLeg) { const s = Math.sin(time * 7.5) * 0.48; al.leftLeg.rotation.x = s; al.rightLeg.rotation.x = -s; al.leftArm.rotation.x = -s * 0.7; al.rightArm.rotation.x = s * 0.7; }
+      }
+
+      controls.update();
+      update3DLabelsProjection();
+      renderer.render(scene, camera);
+    }
+
+    window.onload = () => {
+      initThree();
+      renderCourseDirectory();
+      setupUIEvents();
+      updateMedalUI(0); 
+      animate();
+    };
+  </script>
+</body>
+</html>
