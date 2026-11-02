@@ -252,7 +252,7 @@
         <h4 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
           <span>🎯</span> 課程核心理念與教學目標
         </h4>
-        <p id="drawer-desc" class="text-xs text-slate-600 leading-relaxed">
+        <p id="drawer-desc" class="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
           透過全校動員問候與反思空間建立支持性環境，協助學生將抽象情緒具體化並進行每日情緒盤點。
         </p>
       </div>
@@ -407,13 +407,13 @@
   <!-- Main Application Script -->
   <script>
     // =========================================================================
-    // 1. 核心資料庫 (架構、課程、獎章、美德、彩蛋)
+    // 1. 核心資料庫 (架構、課程、獎章、美德)
     // =========================================================================
     const BASE_SITE_URL = 'https://sites.google.com/owes.tn.edu.tw/owsel';
 
     const ISLAND_CONFIG = {
       inner_lake: {
-        id: 'inner_lake', name: '天空之心・課程總島', competency: '課程學習架構總覽', heroName: '🏰 浮空聖殿與雲端飛瀑生命樹', floraName: '🌿 雲頂鮮綠草甸、巨木與垂崖長春藤',
+        id: 'inner_lake', name: '天空之心・課程總島', competency: '課程學習架構總覽', heroName: '🏰 浮空聖殿與雲頂生命樹', floraName: '🌿 雲頂鮮綠草甸、巨木與垂崖長春藤',
         color: 0x38bdf8, groundColor: 0x4ade80, turfColor: 0x22c55e, cliffColor: 0x92400e, borderHex: '#d97706', pos: { x: 0, y: 3.5, z: 0 }, radius: 9.2, floatSpeed: 1.1, floatPhase: 0,
         url: 'https://sites.google.com/owes.tn.edu.tw/owsel/%E8%AA%B2%E7%A8%8B%E5%AD%B8%E7%BF%92%E6%9E%B6%E6%A7%8B', desc: '系統化推動國小一至六年級社會情緒學習（SEL），串聯低年級情緒辨識、中年級量化調節與和平圈、高年級思辨協商之螺旋式學習生態系。'
       },
@@ -456,47 +456,56 @@
     }
 
     const LANDMARKS = [
-      { id: 'node_01', islandId: 'self_awareness', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-情緒報到', subtitle: '晨曦情緒氣象台｜深呼吸與情緒辨識', icon: '🌤️', pos: getHexRingPos('self_awareness', 0), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E5%A0%B1%E5%88%B0`, desc: '透過每日晨間情緒報到與顏色情緒標示，將抽象感受具體化，並結合嵌入式「深呼吸練習」引導低年級學童覺察身體訊號。', toolType: 'default', archStyle: 'tower', tags: ['一年級', '情緒報到', '生氣', '難過', '深呼吸'] },
-      { id: 'node_02', islandId: 'self_awareness', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-情緒百寶箱', subtitle: '心靈水晶百寶閣｜我的心情檢查站句型填空', icon: '🎁', pos: getHexRingPos('self_awareness', 1), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E7%99%BE%E5%AF%B6%E7%AE%B1`, desc: '建構孩子專屬的「情緒百寶箱」，運用「策略二：我的心情檢查站」句型填空工具，練習說出「當…的時候，我覺得…」。', toolType: 'default', archStyle: 'crystal', tags: ['二年級', '情緒百寶箱', '心情檢查站', '句型填空'] },
-      { id: 'node_03', islandId: 'self_awareness', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-情緒溫度計', subtitle: '微風感測觀測所｜量化情緒溫度與急救包', icon: '🌡️', pos: getHexRingPos('self_awareness', 2), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E6%BA%B6%E5%BA%A6%E8%A8%88`, desc: '導入量化情緒工具「情緒溫度計（1～10度）」，辨識情緒升溫的身體前兆，並在溫度飆高前即時打開個人情緒急救包。', toolType: 'default', archStyle: 'dome', tags: ['三年級', '情緒溫度計', '生氣', '焦慮', '急救包'] },
-      { id: 'node_04', islandId: 'self_awareness', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-我的覺察日記', subtitle: '靜心迴音書屋｜結構化自我反思日記', icon: '📔', pos: getHexRingPos('self_awareness', 3), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E6%88%91%E7%9A%84%E8%A6%BA%E5%AF%9F%E6%97%A5%E8%A8%98`, desc: '透過結構化覺察日記，記錄「引發事件 ➔ 當下想法 ➔ 情緒反應」，培養客觀觀看內心小劇場的後設認知能力。', toolType: 'diary_prompt', archStyle: 'pavilion', tags: ['四年級', '覺察日記', '反思', '內耗'] },
-      { id: 'node_21', islandId: 'self_awareness', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-優勢與目標設定', subtitle: '優勢星光燈塔｜發掘個人長處與成長目標', icon: '⭐', pos: getHexRingPos('self_awareness', 4), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E5%84%AA%E5%8B%A2%E8%88%87%E7%9B%AE%E6%A8%99%E8%A8%AD%E5%AE%9A`, desc: '識別個人多元優勢與限制，將「我還不會」轉化為成長型思維，並依據自身強項設定具體可行的階段目標。', toolType: 'strength_picker', archStyle: 'spire', tags: ['五年級', '優勢', '目標設定', '自信'] },
-      { id: 'node_22', islandId: 'self_awareness', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-內省與自信行動', subtitle: '核心價值稜鏡台｜自我效能檢視與實踐', icon: '💎', pos: getHexRingPos('self_awareness', 5), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E5%85%A7%E7%9C%81%E8%88%87%E8%87%AA%E4%BF%A1%E8%A1%8C%E5%8B%95`, desc: '高年級深度自我效能檢視，透過內省釐清個人核心價值觀，面對升學與同儕挑戰時展現堅定自信的行動力。', toolType: 'value_cards', archStyle: 'crystal', tags: ['六年級', '內省', '自信行動', '價值觀'] },
-      { id: 'node_05', islandId: 'self_management', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-厲害的控制家', subtitle: '深呼吸微風磨坊｜CBS 基礎呼吸控制法（數、呼、擠）', icon: '🌬️', pos: getHexRingPos('self_management', 0), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E5%8E%B2%E5%AE%B3%E7%9A%84%E6%8E%A7%E5%88%B6%E5%AE%B6`, desc: '學習「CBS 基礎呼吸控制法（Count 數、Breathe 呼、Squeeze 擠）」，化身厲害的情緒控制家，讓磨坊隨平稳呼吸轉動。', toolType: 'default', archStyle: 'windmill', tags: ['一年級', '控制家', '呼吸', 'CBS', '緊張'] },
-      { id: 'node_06', islandId: 'self_management', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-超能自律王', subtitle: '規律時鐘水車｜生活常規與延遲滿足', icon: '⏰', pos: getHexRingPos('self_management', 1), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E8%B6%85%E8%83%BD%E8%87%AA%E5%BE%8B%E7%8E%8B`, desc: '建立固定生活規律以降低焦慮感，透過棉花糖延遲滿足挑戰與每日自律集點，鍛鍊「先完成該做的事，再享受喜歡的事」。', toolType: 'default', archStyle: 'fountain', tags: ['二年級', '超能自律王', '自律', '生氣', '衝動'] },
-      { id: 'node_07', islandId: 'self_management', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-我是小超人', subtitle: '衝動冷卻噴泉｜情緒剎車與超人披風', icon: '🦸', pos: getHexRingPos('self_management', 2), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E6%88%91%E6%98%AF%E5%B0%8F%E8%B6%85%E4%BA%BA`, desc: '真正的小超人不是力氣最大的人，而是能在快要發脾氣時踩下「5 秒冷卻剎車」的人，學習轉換攻擊衝動為建設性行動。', toolType: 'default', archStyle: 'fountain', tags: ['三年級', '我是小超人', '生氣', '衝動控制'] },
-      { id: 'node_08', islandId: 'self_management', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-我的超級計畫', subtitle: '目標階梯步道｜情緒計畫表與微習慣拆解', icon: '🧗', pos: getHexRingPos('self_management', 3), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E6%88%91%E7%9A%84%E8%B6%85%E7%B4%9A%E8%A8%88%E7%95%AB`, desc: '使用「情緒計畫表」追蹤情緒變化，並將龐大的學習任務拆解為一階一階可輕鬆踏上的超級計畫步道。', toolType: 'goal_stepper', archStyle: 'steps', tags: ['四年級', '超級計畫', '目標', '拖延', '焦慮'] },
-      { id: 'node_23', islandId: 'self_management', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-超能力基地', subtitle: '90秒神經沉澱溫泉｜生理調節超能力基地', icon: '♨️', pos: getHexRingPos('self_management', 4), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E8%B6%85%E8%83%BD%E5%8A%9B%E5%9F%BA%E5%9C%B0`, desc: '認識腦科學「90 秒情緒化學物質代謝機制」：當憤怒或恐懼湧現時，只要不在前 90 秒添柴火，情緒海嘯就會自然退潮。', toolType: 'default', archStyle: 'dome', tags: ['五年級', '超能力基地', '90秒', '壓力', '放鬆'] },
-      { id: 'node_24', islandId: 'self_management', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-超能經理人', subtitle: '領航抗壓觀測閣｜時間管理與抵抗同儕不當壓力', icon: '🧭', pos: getHexRingPos('self_management', 5), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E8%B6%85%E8%83%BD%E7%B6%93%E7%90%86%E4%BA%BA`, desc: '化身自己時間與情緒的「超能經理人」，妥善調配升學壓力與休閒，並具備抵抗不良社交誘惑與同儕壓力的定力。', toolType: 'goal_stepper', archStyle: 'tower', tags: ['六年級', '超能經理人', '時間管理', '抗壓'] },
-      { id: 'node_09', islandId: 'social_awareness', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-情緒小偵探', subtitle: '表情放大鏡亭｜解讀非語言表情與肢體線索', icon: '🔍', pos: getHexRingPos('social_awareness', 0), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E5%B0%8F%E5%81%B5%E6%8E%A2`, desc: '化身敏銳的「情緒小偵探」，觀察同學的眉頭、嘴角、語氣與垂下的肩膀，讀懂沒說出口的心情密碼。', toolType: 'perspective_viewer', archStyle: 'pavilion', tags: ['一年級', '情緒小偵探', '表情', '觀察'] },
-      { id: 'node_10', islandId: 'social_awareness', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-社交小雷達', subtitle: '同理心避風港｜開啟社交雷達感知環境氛圍', icon: '📡', pos: getHexRingPos('social_awareness', 1), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E7%A4%BE%E4%BA%A4%E5%B0%8F%E9%9B%B7%E9%81%94`, desc: '打開頭頂的「社交小雷達」，辨識場合氣氛（何時適合開玩笑、何時需要安靜陪伴），成為體貼溫暖的同儕避風港。', toolType: 'empathy_notes', archStyle: 'tower', tags: ['二年級', '社交小雷達', '同理心', '陪伴'] },
-      { id: 'node_11', islandId: 'social_awareness', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-小小觀察家', subtitle: '換位雙筒觀景台｜思考、對談、分享互動架構', icon: '🔭', pos: getHexRingPos('social_awareness', 2), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E5%B0%8F%E5%B0%8F%E6%B8%AF%E5%AF%9F%E5%AE%B6`, desc: '運用「思考（Think）、對談（Pair）、分享（Share）」互動架構，站上換位觀景台，練習從不同角色的雙眼看同一件事。', toolType: 'perspective_viewer', archStyle: 'dome', tags: ['三年級', '小小觀察家', '換位思考', '誤會'] },
-      { id: 'node_12', islandId: 'social_awareness', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-社會偵探任務', subtitle: '社群守護神木｜辨識多元角色與社會支持資源', icon: '🌳', pos: getHexRingPos('social_awareness', 3), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E7%A4%BE%E6%9C%83%E5%81%B5%E6%8E%A2%E4%BB%BB%E5%8B%99`, desc: '出動執行「社會偵探任務」，探索校園與社區中默默付出的多元角色，並繪製個人與班級的守護神木求助支持網。', toolType: 'support_map', archStyle: 'tree', tags: ['四年級', '社會偵探任務', '求助', '支持系統'] },
-      { id: 'node_25', islandId: 'social_awareness', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-社會覺察練功坊', subtitle: '多元故事圖書館｜文化多樣性與破除刻板印象', icon: '📚', pos: getHexRingPos('social_awareness', 4), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F%E7%B7%B4%E5%8A%9F%E5%9D%8A`, desc: '在練功坊中深度探索文化多樣性與個別差異，破除性別、族群或特教生刻板印象，建立共融互重的班級文化。', toolType: 'perspective_viewer', archStyle: 'pavilion', tags: ['五年級', '社會覺察練功坊', '多元', '包容'] },
-      { id: 'node_26', islandId: 'social_awareness', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-我能讀懂你', subtitle: '心靈共鳴燈塔｜高階同理心回饋與深度理解', icon: '💖', pos: getHexRingPos('social_awareness', 5), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E6%88%91%E8%83%BD%E8%AE%80%E6%87%82%E4%BD%A0`, desc: '超越表面的同情，練習高階同理心回饋（「我能讀懂你言詞背後的在乎與不安」），成為團體中溫暖穩定的支持力量。', toolType: 'empathy_notes', archStyle: 'spire', tags: ['六年級', '我能讀懂你', '同理心', '傾聽'] },
-      { id: 'node_13', islandId: 'relationship', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-人際探險隊', subtitle: '微笑迎賓茶亭｜友善問候、輪流與分享', icon: '⛺', pos: getHexRingPos('relationship', 0), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E4%BA%BA%E9%9A%9B%E6%8E%A2%E9%9A%AA%E9%9A%8A`, desc: '組成「人際探險隊」，學習主動微笑打招呼、借用物品說請與謝謝、遊戲時輪流等待，踏出友誼的第一步。', toolType: 'nvc_builder', archStyle: 'pavilion', tags: ['一年級', '人際探險隊', '交朋友', '分享'] },
-      { id: 'node_14', islandId: 'relationship', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-星際拍檔任務', subtitle: '雙子星協作坊｜雙人合作分工與互助', icon: '🚀', pos: getHexRingPos('relationship', 1), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E6%98%9F%E9%9A%9B%E6%8B%8D%E6%AA%94%E4%BB%BB%E5%8B%99`, desc: '透過「星際拍檔任務」雙人闖關，學習在合作中明確分工、互相補位，體會「兩個人一起做比一個人更快更好」。', toolType: 'nvc_builder', archStyle: 'dome', tags: ['二年級', '星際拍檔', '合作', '分工'] },
-      { id: 'node_15', islandId: 'relationship', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-人際互動魔法島', subtitle: '和平圈魔法石陣｜運用和平圈傾聽與表達界線', icon: '🪄', pos: getHexRingPos('relationship', 2), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E4%BA%BA%E9%9A%9B%E4%BA%92%E5%8B%95%E9%AD%94%E6%B3%95%E5%B3%B6`, desc: '圍坐於「和平圈（Peace Circle）」，手持發言信物輪流說出真心話，學習尊重他人發言並溫和堅定地表達個人界線。', toolType: 'nvc_builder', archStyle: 'crystal', tags: ['三年級', '人際互動魔法島', '和平圈', '界線'] },
-      { id: 'node_16', islandId: 'relationship', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-班級協商冒險島', subtitle: '協同造舟工坊｜班級自治討論與化解歧見', icon: '⛵', pos: getHexRingPos('relationship', 3), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E7%8F%AD%E7%B4%9A%E5%8D%94%E5%95%86%E5%86%92%E9%9A%AA%E5%B3%B6`, desc: '當班級活動意見分歧時，不靠大聲爭吵或盲目少數服從多數，而是透過協商冒險島找出兼顧各方需求的共好方案。', toolType: 'nvc_builder', archStyle: 'steps', tags: ['四年級', '班級協商冒險島', '團隊', '溝通'] },
-      { id: 'node_27', islandId: 'relationship', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-五之神探險隊', subtitle: '五芒星拼圖聖殿｜拼圖教學法（Jigsaw）與團隊共榮', icon: '🛡️', pos: getHexRingPos('relationship', 4), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E4%BA%94%E4%B9%8B%E7%A5%9E%E6%8E%A2%E9%9A%AA%E9%9A%8A`, desc: '運用拼圖教學法（Jigsaw）與專題式學習，讓每位隊員成為不可或缺的拼圖專家，在互賴互助中完成高難度團隊任務。', toolType: 'nvc_builder', archStyle: 'spire', tags: ['五年級', '五之神探險隊', '拼圖教學法', '合作'] },
-      { id: 'node_28', islandId: 'relationship', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-衝突協商與人際大師', subtitle: '修復之橋與協商擂台｜Friday Talk × 修復對話診所', icon: '🌉', pos: getHexRingPos('relationship', 5), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E8%A1%9D%E7%AA%81%E5%8D%94%E5%95%86%E8%88%87%E4%BA%BA%E9%9A%9B%E5%A4%A7%E5%B8%AB`, desc: '整合「關卡1：實境挑戰賽與 Friday Talk 集章卡」、「關卡2：修復對話診所（NVC）」與「關卡3：協商辯論擂台」，培養人際大師素養！', toolType: 'nvc_builder', archStyle: 'bridge', tags: ['六年級', '衝突協商', '人際大師', '吵架', '修復對話'] },
-      { id: 'node_17', islandId: 'decision', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-魔法選擇大冒險', subtitle: '紅綠燈魔法拱門｜安全守則與基本是非選擇', icon: '🚦', pos: getHexRingPos('decision', 0), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E9%AD%94%E6%B3%95%E9%81%B8%E6%93%87%E5%A4%A7%E5%86%92%E9%9A%AA`, desc: '在魔法選擇大冒險中，認識校園安全與基本教室規範，練習在行動前先想一想：「這樣做安全嗎？會不會傷害到別人？」', toolType: 'default', archStyle: 'pavilion', tags: ['一年級', '魔法選擇大冒險', '安全', '選擇'] },
-      { id: 'node_18', islandId: 'decision', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-選擇小偵探', subtitle: '抉擇雙盤天平｜區分一時衝動與聰明選擇', icon: '⚖️', pos: getHexRingPos('decision', 1), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E9%81%B8%E6%93%87%E5%B0%8F%E5%81%B5%E6%8E%A2`, desc: '化身「選擇小偵探」，找出每個選項背後的線索，學會區分「一時貪玩的衝動選擇」與「讓自己更進步的聰明選擇」。', toolType: 'default', archStyle: 'tower', tags: ['二年級', '選擇小偵探', '做決定', '猶豫'] },
-      { id: 'node_19', islandId: 'decision', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-衝突時空實驗室', subtitle: '時空沙盤推演室｜回溯衝突起點與平行時空後果', icon: '⏳', pos: getHexRingPos('decision', 2), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E8%A1%9D%E7%AA%81%E6%99%82%E7%A9%BA%E5%AF%A6%E9%A9%97%E5%AE%A4`, desc: '搭上「衝突時空實驗室」時光機，模擬若在衝突發生那刻採取不同選擇（A 報復 vs B 冷靜溝通），將推演出截然不同的未來平行時空。', toolType: 'default', archStyle: 'dome', tags: ['三年級', '衝突時空實驗室', '後果', '推演'] },
-      { id: 'node_20', islandId: 'decision', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-決策思考大挑戰', subtitle: '五步星盤鐘樓｜發現、分析、尋求、評估、反思', icon: '🕰️', pos: getHexRingPos('decision', 3), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E6%B1%BA%E7%AD%96%E6%80%9D%E8%80%83%E5%A4%A7%E6%8C%91%E6%88%B0`, desc: '演練系統化決策五大步驟：「1.發現問題 ➔ 2.分析現況 ➔ 3.尋求方案 ➔ 4.評估選擇 ➔ 5.事後反思」，在時間壓力下做出穩健判斷。', toolType: 'default', archStyle: 'spire', tags: ['四年級', '決策思考大挑戰', '五步驟', '反思'] },
-      { id: 'node_29', islandId: 'decision', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-生命好舵手', subtitle: '領航羅盤觀測台｜價值觀評估與人生航向掌舵', icon: '☸️', pos: getHexRingPos('decision', 4), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E7%94%9F%E5%91%BD%E5%A5%BD%E8%88%B5%E6%89%8B`, desc: '在充滿網路誘惑與同儕壓力的航道上，緊握道德與安全羅盤，成為自己生命的「好舵手」，為個人與群體福祉負責。', toolType: 'default', archStyle: 'tower', tags: ['五年級', '生命好舵手', '價值觀', '負責'] },
-      { id: 'node_30', islandId: 'decision', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-思辨與決策', subtitle: '智慧溫馨思辨控制台｜完全同意／部分同意多維度論證', icon: '🏛️', pos: getHexRingPos('decision', 5), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E6%80%9D%E8%BE%A8%E8%88%87%E6%B1%BA%E7%AD%96`, desc: '整合「生活與社會思辨控制台」互動系統，針對校園與社會兩難議題進行「完全同意／部分同意／不同意」立場論述與深度思辨分析。', toolType: 'default', archStyle: 'crystal', tags: ['六年級', '思辨與決策', '思辨控制台', '道德困境', '做決定'] }
+      // ==================== 1. 自我覺察 (澄鏡浮島) ====================
+      { id: 'node_01', islandId: 'self_awareness', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-情緒報到', subtitle: '晨曦情緒氣象台｜情緒臉譜辨識與身體訊號覺察', icon: '🌤️', pos: getHexRingPos('self_awareness', 0), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E5%A0%B1%E5%88%B0`, desc: '【核心理念】情緒沒有好壞之分，能看見並說出感受是自我覺察的第一步。\n【教學目標】引導一年級學童透過每日晨間「情緒氣象報到」認識基本情緒詞彙（開心、生氣、難過、害怕），並覺察情緒來臨時的心跳、呼吸與臉部表情變化。', toolType: 'default', archStyle: 'tower', tags: ['一年級', '情緒報到', '生氣', '難過', '深呼吸'] },
+      { id: 'node_02', islandId: 'self_awareness', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-情緒百寶箱', subtitle: '心靈水晶百寶閣｜我的心情檢查站句型與感受詞彙庫', icon: '🎁', pos: getHexRingPos('self_awareness', 1), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E7%99%BE%E5%AF%B6%E7%AE%B1`, desc: '【核心理念】豐富情緒詞彙庫，能幫助孩子更精準地表達內在狀態並尋求支持。\n【教學目標】建構個人專屬的「情緒百寶箱」，熟練運用「我的心情檢查站」句型填空（當…的時候，我覺得…，因為…），連結引發事件與自身感受。', toolType: 'default', archStyle: 'crystal', tags: ['二年級', '情緒百寶箱', '心情檢查站', '句型填空'] },
+      { id: 'node_03', islandId: 'self_awareness', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-情緒溫度計', subtitle: '微風感測觀測所｜1至10度情緒量化評估與身體預警', icon: '🌡️', pos: getHexRingPos('self_awareness', 2), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E6%BA%AB%E5%BA%A6%E8%A8%88`, desc: '【核心理念】將抽象的情緒強度視覺化與量化，能在情緒失控前啟動自我保護機制。\n【教學目標】學會使用「情緒溫度計（1～10度）」評估當下情緒強度，辨識溫度升高時的身體預警訊號（如握拳、臉紅），並建立個人降溫急救策略。', toolType: 'default', archStyle: 'dome', tags: ['三年級', '情緒溫度計', '生氣', '焦慮', '急救包'] },
+      { id: 'node_04', islandId: 'self_awareness', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-我的覺察日記', subtitle: '靜心迴音書屋｜事件、想法與情緒之ABC關聯反思', icon: '📔', pos: getHexRingPos('self_awareness', 3), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E6%88%91%E7%9A%84%E8%A6%BA%E5%AF%9F%E6%97%A5%E8%A8%98`, desc: '【核心理念】影響情緒的往往不是事件本身，而是我們對事件的詮釋與內在對話。\n【教學目標】透過結構化「覺察日記」，記錄「引發事件 ➔ 當下想法 ➔ 情緒與行為反應」，培養四年級學童客觀看待內心小劇場的後設認知與反思習慣。', toolType: 'diary_prompt', archStyle: 'pavilion', tags: ['四年級', '覺察日記', '反思', '內耗'] },
+      { id: 'node_21', islandId: 'self_awareness', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-優勢與目標設定', subtitle: '優勢星光燈塔｜多元智能探索、成長型思維與目標設定', icon: '⭐', pos: getHexRingPos('self_awareness', 4), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E5%84%AA%E5%8B%A2%E8%88%87%E7%9B%AE%E6%A8%99%E8%A8%AD%E5%AE%9A`, desc: '【核心理念】看見自己的天賦優勢並接納暫時的不足，是建立成長型思維的關鍵。\n【教學目標】盤點個人品格優勢與多元能力，將「我做不到」轉化為「我還在學習中」，並結合自身強項設定具體、可達成的階段性自我成長目標。', toolType: 'strength_picker', archStyle: 'spire', tags: ['五年級', '優勢', '目標設定', '自信'] },
+      { id: 'node_22', islandId: 'self_awareness', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-內省與自信行動', subtitle: '核心價值稜鏡台｜深度自我效能檢視與抗壓自信實踐', icon: '💎', pos: getHexRingPos('self_awareness', 5), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E8%A6%BA%E5%AF%9F/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E5%85%A7%E7%9C%81%E8%88%87%E8%87%AA%E4%BF%A1%E8%A1%8C%E5%8B%95`, desc: '【核心理念】深度的自我內省能錨定個人核心價值觀，賦予面對未知挑戰的自信與勇氣。\n【教學目標】引導高年級畢業生進行自我效能感檢視，釐清個人重視的價值排序，在面對同儕比較與升學轉換期時，展現接納自我、勇敢實踐的自信行動力。', toolType: 'value_cards', archStyle: 'crystal', tags: ['六年級', '內省', '自信行動', '價值觀'] },
+
+      // ==================== 2. 自我管理 (定心浮島) ====================
+      { id: 'node_05', islandId: 'self_management', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-厲害的控制家', subtitle: '深呼吸微風磨坊｜CBS 基礎呼吸控制法（數、呼、擠）', icon: '🌬️', pos: getHexRingPos('self_management', 0), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E5%8E%B2%E5%AE%B3%E7%9A%84%E6%8E%A7%E5%88%B6%E5%AE%B6`, desc: '【核心理念】平緩的呼吸與肌肉放鬆能直接安定自律神經，幫助身體從衝動恢復平靜。\n【教學目標】透過具體好記的「CBS 基礎控制法（Count 數數、Breathe 吹氣、Squeeze 握緊再放鬆）」，帶領一年級學童練習穩定身體與情緒的基礎調節技巧。', toolType: 'default', archStyle: 'windmill', tags: ['一年級', '控制家', '呼吸', 'CBS', '緊張'] },
+      { id: 'node_06', islandId: 'self_management', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-超能自律王', subtitle: '規律時鐘水車｜生活作息常規建立與延遲滿足練習', icon: '⏰', pos: getHexRingPos('self_management', 1), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E8%B6%85%E8%83%BD%E8%87%AA%E5%BE%8B%E7%8E%8B`, desc: '【核心理念】可預測的規律生活能帶來安全感，而延遲滿足則是培養自律品格的基石。\n【教學目標】協助二年級學童建立固定的作息與學習常規以降低焦慮，透過情境挑戰練習「先完成重要的事，再享受喜歡的事」，強化專注與抗誘惑能力。', toolType: 'default', archStyle: 'fountain', tags: ['二年級', '超能自律王', '自律', '生氣', '衝動'] },
+      { id: 'node_07', islandId: 'self_management', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-我是小超人', subtitle: '衝動冷卻噴泉｜5秒情緒剎車與正向替代行動選擇', icon: '🦸', pos: getHexRingPos('self_management', 2), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E6%88%91%E6%98%AF%E5%B0%8F%E8%B6%85%E4%BA%BA`, desc: '【核心理念】真正的超能力不是發洩怒氣，而是在衝動湧現的瞬間為自己踩下剎車。\n【教學目標】訓練三年級學童在遭遇挫折或挑釁時，啟動「停、想、選」5 秒冷卻剎車機制，將攻擊或哭鬧的衝動轉化為具體可行的正向應對行動。', toolType: 'default', archStyle: 'fountain', tags: ['三年級', '我是小超人', '生氣', '衝動控制'] },
+      { id: 'node_08', islandId: 'self_management', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-我的超級計畫', subtitle: '目標階梯步道｜情緒調節計畫表與小步子任務拆解', icon: '🧗', pos: getHexRingPos('self_management', 3), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E6%88%91%E7%9A%84%E8%B6%85%E7%B4%9A%E8%A8%88%E7%95%AB`, desc: '【核心理念】將大目標拆解為小步驟並預先規劃因應策略，能有效克服拖延與畏難焦慮。\n【教學目標】運用「情緒與學習超級計畫表」，引導四年級學童將複雜任務分解為每日可執行的小階梯，並為可能遇到的挫折預先擬定自我激勵對策。', toolType: 'goal_stepper', archStyle: 'steps', tags: ['四年級', '超級計畫', '目標', '拖延', '焦慮'] },
+      { id: 'node_23', islandId: 'self_management', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-超能力基地', subtitle: '90秒神經沉澱溫泉｜腦科學情緒代謝機制與壓力調適', icon: '♨️', pos: getHexRingPos('self_management', 4), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E8%B6%85%E8%83%BD%E5%8A%9B%E5%9F%BA%E5%9C%B0`, desc: '【核心理念】理解大腦杏仁核與前額葉的運作機制，能以科學方法度過 90 秒情緒風暴。\n【教學目標】認識腦科學「90 秒情緒化學物質自然代謝定律」，學習在壓力與憤怒高峰期運用正念覺察、轉移注意力與運動舒壓，避免負面思維反芻。', toolType: 'default', archStyle: 'dome', tags: ['五年級', '超能力基地', '90秒', '壓力', '放鬆'] },
+      { id: 'node_24', islandId: 'self_management', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-超能經理人', subtitle: '領航抗壓觀測閣｜時間管理矩陣與抗衡同儕不當誘惑', icon: '🧭', pos: getHexRingPos('self_management', 5), url: `${BASE_SITE_URL}/%E8%87%AA%E6%88%91%E7%AE%A1%E7%90%86/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E8%B6%85%E8%83%BD%E7%B6%93%E7%90%86%E4%BA%BA`, desc: '【核心理念】自主管理時間、數位3C與身心能量，是邁向青少年階段最重要的獨立素養。\n【教學目標】培養六年級學童運用輕重緩急原則成為自己的「超能經理人」，平衡課業與休閒，並在面對網路沉迷與同儕不當邀約時展現堅定的自制力。', toolType: 'goal_stepper', archStyle: 'tower', tags: ['六年級', '超能經理人', '時間管理', '抗壓'] },
+
+      // ==================== 3. 社會覺察 (共鳴浮島) ====================
+      { id: 'node_09', islandId: 'social_awareness', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-情緒小偵探', subtitle: '表情放大鏡亭｜觀察五官表情、語氣與肢體非語言線索', icon: '🔍', pos: getHexRingPos('social_awareness', 0), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E6%83%85%E7%B7%92%E5%B0%8F%E5%81%B5%E6%8E%A2`, desc: '【核心理念】同理心的起點在於用心觀看與傾聽，從細微的非語言線索讀懂他人的心情。\n【教學目標】化身敏銳的「情緒小偵探」，練習觀察師長與同學的眉頭、嘴角、聲音語調與肢體動作，推論對方當下的情緒狀態並給予適當的關心。', toolType: 'perspective_viewer', archStyle: 'pavilion', tags: ['一年級', '情緒小偵探', '表情', '觀察'] },
+      { id: 'node_10', islandId: 'social_awareness', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-社交小雷達', subtitle: '同理心避風港｜感知場合氣氛與學習溫暖陪伴傾聽', icon: '📡', pos: getHexRingPos('social_awareness', 1), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E7%A4%BE%E4%BA%A4%E5%B0%8F%E9%9B%B7%E9%81%94`, desc: '【核心理念】開啟對周遭環境與他人感受的敏感度，能讓班級成為溫暖安全的避風港。\n【教學目標】啟動頭頂的「社交小雷達」，學習分辨不同場合的氛圍與界線（何時適合歡笑、何時需要安靜），並在同學失落時提供不批評的溫暖陪伴。', toolType: 'empathy_notes', archStyle: 'tower', tags: ['二年級', '社交小雷達', '同理心', '陪伴'] },
+      { id: 'node_11', islandId: 'social_awareness', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-小小觀察家', subtitle: '換位雙筒觀景台｜觀點取替練習與「思考、對談、分享」', icon: '🔭', pos: getHexRingPos('social_awareness', 2), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E5%B0%8F%E5%B0%8F%E8%A7%80%E5%AF%9F%E5%AE%B6`, desc: '【核心理念】同一件事從不同位置觀看會有不同解讀，換位思考能消弭多數的人際誤會。\n【教學目標】運用「思考（Think）、對談（Pair）、分享（Share）」策略進行觀點取替練習，引導三年級學童站在不同角色的立場思考，理解多元觀點的存在。', toolType: 'perspective_viewer', archStyle: 'dome', tags: ['三年級', '小小觀察家', '換位思考', '誤會'] },
+      { id: 'node_12', islandId: 'social_awareness', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-社會偵探任務', subtitle: '社群守護神木｜探索校園社區支持網絡與感恩行動', icon: '🌳', pos: getHexRingPos('social_awareness', 3), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E7%A4%BE%E6%9C%83%E5%81%B5%E6%8E%A2%E4%BB%BB%E5%8B%99`, desc: '【核心理念】沒有人是一座孤島，看見群體中他人的付出並善用支持資源，能強化社會連結。\n【教學目標】透過「社會偵探任務」盤點家庭、漚汪校園與將軍社區中的守護資源，繪製個人求助支持網，並對默默付出的師長、志工與家人表達具體感恩。', toolType: 'support_map', archStyle: 'tree', tags: ['四年級', '社會偵探任務', '求助', '支持系統'] },
+      { id: 'node_25', islandId: 'social_awareness', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-社會覺察練功坊', subtitle: '多元故事圖書館｜尊重個別差異、文化多元與破除偏見', icon: '📚', pos: getHexRingPos('social_awareness', 4), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F%E7%B7%B4%E5%8A%9F%E5%9D%8A`, desc: '【核心理念】真正的尊重是理解每個人都有獨特的生命背景，放下先入為主的標籤與偏見。\n【教學目標】在練功坊中探討性別、文化背景與學習特質的多樣性，覺察日常生活中潛藏的刻板印象，主動營造共融、反霸凌與互重的班級氛圍。', toolType: 'perspective_viewer', archStyle: 'pavilion', tags: ['五年級', '社會覺察練功坊', '多元', '包容'] },
+      { id: 'node_26', islandId: 'social_awareness', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-我能讀懂你', subtitle: '心靈共鳴燈塔｜深度同理心傾聽與讀懂弦外之音', icon: '💖', pos: getHexRingPos('social_awareness', 5), url: `${BASE_SITE_URL}/%E7%A4%BE%E6%9C%83%E8%A6%BA%E5%AF%9F/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E6%88%91%E8%83%BD%E8%AE%80%E6%87%82%E4%BD%A0`, desc: '【核心理念】高階同理心能穿透防衛性的言語表面，看見對方行為背後未被滿足的心理需求。\n【教學目標】練習深度傾聽與同理心回應技巧，分辨「同情／說教」與「同理共鳴」的差異，能讀懂同儕言詞背後的焦慮或在乎，並給予支持性回饋。', toolType: 'empathy_notes', archStyle: 'spire', tags: ['六年級', '我能讀懂你', '同理心', '傾聽'] },
+
+      // ==================== 4. 人際關係 (築橋浮島) ====================
+      { id: 'node_13', islandId: 'relationship', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-人際探險隊', subtitle: '微笑迎賓茶亭｜微笑問候、禮貌用語與輪流分享', icon: '⛺', pos: getHexRingPos('relationship', 0), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E4%BA%BA%E9%9A%9B%E6%8E%A2%E9%9A%AA%E9%9A%8A`, desc: '【核心理念】友善的微笑、禮貌的言語與願意分享的行動，是開啟所有美好友誼的鑰匙。\n【教學目標】帶領一年級學童組成「人際探險隊」，演練主動打招呼、借用物品說「請、謝謝、對不起」，以及在遊戲中遵守規則、輪流等待與分享玩具。', toolType: 'nvc_builder', archStyle: 'pavilion', tags: ['一年級', '人際探險隊', '交朋友', '分享'] },
+      { id: 'node_14', islandId: 'relationship', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-星際拍檔任務', subtitle: '雙子星協作坊｜雙人默契分工、互助補位與正向鼓勵', icon: '🚀', pos: getHexRingPos('relationship', 1), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E6%98%9F%E9%9A%9B%E6%8B%8D%E6%AA%94%E4%BB%BB%E5%8B%99`, desc: '【核心理念】合作不是一個人做全部的事，而是在分工互助中發現「我們一起做更好」。\n【教學目標】透過「星際拍檔」雙人協作任務，學習傾聽夥伴意見、協調分工並在隊友遇到困難時給予具體鼓勵與協助，體驗共同完成目標的喜悅。', toolType: 'nvc_builder', archStyle: 'dome', tags: ['二年級', '星際拍檔', '合作', '分工'] },
+      { id: 'node_15', islandId: 'relationship', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-人際互動魔法島', subtitle: '和平圈魔法石陣｜和平圈傾聽規則與溫和堅定表達界線', icon: '🪄', pos: getHexRingPos('relationship', 2), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E4%BA%BA%E9%9A%9B%E4%BA%92%E5%8B%95%E9%AD%94%E6%B3%95%E5%B3%B6`, desc: '【核心理念】在平等尊重的對話空間中，每個人都能練習真誠表達感受並守護個人身體與心理界線。\n【教學目標】導入「和平圈（Peace Circle）」對話儀式，學習手持發言信物時真誠使用「我訊息」表達，無信物時專注傾聽，並練習溫和而堅定地拒絕不舒服的對待。', toolType: 'nvc_builder', archStyle: 'crystal', tags: ['三年級', '人際互動魔法島', '和平圈', '界線'] },
+      { id: 'node_16', islandId: 'relationship', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-班級協商冒險島', subtitle: '協同造舟工坊｜班級議題民主討論與尋求雙贏共識', icon: '⛵', pos: getHexRingPos('relationship', 3), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E7%8F%AD%E7%B4%9A%E5%8D%94%E5%95%86%E5%86%92%E9%9A%AA%E5%B3%B6`, desc: '【核心理念】面對團體意見分歧時，對事不對人的理性協商能將衝突轉化為創意的雙贏方案。\n【教學目標】結合班級自治與小組合作情境，訓練四年級學童在意見相左時保持冷靜，練習彙整各方需求並提出兼顧彼此利益的折衷與共好方案。', toolType: 'nvc_builder', archStyle: 'steps', tags: ['四年級', '班級協商冒險島', '團隊', '溝通'] },
+      { id: 'node_27', islandId: 'relationship', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-五之神探險隊', subtitle: '五芒星拼圖聖殿｜拼圖教學法（Jigsaw）與高階團隊領導', icon: '🛡️', pos: getHexRingPos('relationship', 4), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E4%BA%94%E4%B9%8B%E7%A5%9E%E6%8E%A2%E9%9A%AA%E9%9A%8A`, desc: '【核心理念】在正向互賴的團隊中，每位成員都是不可或缺的拼圖，彼此成就才能發揮最大力量。\n【教學目標】運用「拼圖法合作學習（Jigsaw）」與專題探究任務，培養五年級學童承擔專家責任、善用隊友優勢、化解組內摩擦並共同達成高挑戰性目標。', toolType: 'nvc_builder', archStyle: 'spire', tags: ['五年級', '五之神探險隊', '拼圖教學法', '合作'] },
+      { id: 'node_28', islandId: 'relationship', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-衝突協商與人際大師', subtitle: '修復之橋與協商擂台｜Friday Talk × 非暴力溝通修復診所', icon: '🌉', pos: getHexRingPos('relationship', 5), url: `${BASE_SITE_URL}/%E4%BA%BA%E9%9A%9B%E9%97%9C%E4%BF%82/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E8%A1%9D%E7%AA%81%E5%8D%94%E5%95%86%E8%88%87%E4%BA%BA%E9%9A%9B%E5%A4%A7%E5%B8%AB`, desc: '【核心理念】修復關係比爭論對錯更重要，非暴力溝通與修復式對話能搭起理解與和解的橋樑。\n【教學目標】整合「實境挑戰賽與 Friday Talk」、「修復對話診所（觀察、感受、需要、請求）」與「協商辯論擂台」三大模組，培養六年級學童成熟處理人際衝突與修復關係的大師素養。', toolType: 'nvc_builder', archStyle: 'bridge', tags: ['六年級', '衝突協商', '人際大師', '吵架', '修復對話'] },
+
+      // ==================== 5. 負責任的決策 (航標浮島) ====================
+      { id: 'node_17', islandId: 'decision', grade: 1, gradeBand: 'low', gradeLabel: '一年級', title: '一年級-魔法選擇大冒險', subtitle: '紅綠燈魔法拱門｜停看聽安全守則與日常是非判斷', icon: '🚦', pos: getHexRingPos('decision', 0), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%B8%80%E5%B9%B4%E7%B4%9A-%E9%AD%94%E6%B3%95%E9%81%B8%E6%93%87%E5%A4%A7%E5%86%92%E9%9A%AA`, desc: '【核心理念】每一個小小的選擇都會帶來結果，行動前先「停、看、想」能保護自己與他人的安全。\n【教學目標】透過「紅綠燈魔法選擇」情境冒險，協助一年級學童認識校園安全與班級常規，練習在行動前先思考：「這樣做安全嗎？符合規定嗎？會不會影響別人？」', toolType: 'default', archStyle: 'pavilion', tags: ['一年級', '魔法選擇大冒險', '安全', '選擇'] },
+      { id: 'node_18', islandId: 'decision', grade: 2, gradeBand: 'low', gradeLabel: '二年級', title: '二年級-選擇小偵探', subtitle: '抉擇雙盤天平｜衡量衝動選擇與負責任選擇之後果', icon: '⚖️', pos: getHexRingPos('decision', 1), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%BA%8C%E5%B9%B4%E7%B4%9A-%E9%81%B8%E6%93%87%E5%B0%8F%E5%81%B5%E6%8E%A2`, desc: '【核心理念】負責任的決定來自於看清不同選項背後的因果關聯，並勇於為自己的選擇負責。\n【教學目標】引導二年級學童化身「選擇小偵探」，比較「一時貪玩或衝動的選擇」與「聰明負責任的選擇」所帶來的不同結果，培養明辨是非的基礎判斷力。', toolType: 'default', archStyle: 'tower', tags: ['二年級', '選擇小偵探', '做決定', '猶豫'] },
+      { id: 'node_19', islandId: 'decision', grade: 3, gradeBand: 'mid', gradeLabel: '三年級', title: '三年級-衝突時空實驗室', subtitle: '時空沙盤推演室｜回溯問題起點與預演不同決策之平行未來', icon: '⏳', pos: getHexRingPos('decision', 2), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%B8%89%E5%B9%B4%E7%B4%9A-%E8%A1%9D%E7%AA%81%E6%99%82%E7%A9%BA%E5%AF%A6%E9%A9%97%E5%AE%A4`, desc: '【核心理念】如果能預見每個選擇在未來掀起的蝴蝶效應，我們就能在當下做出最不後悔的決定。\n【教學目標】運用「衝突時空實驗室」因果推演工具，帶領三年級學童回溯人際或學習問題的起點，模擬選擇不同方案（如報復、逃避或溝通）所產生的短中長期後果。', toolType: 'default', archStyle: 'dome', tags: ['三年級', '衝突時空實驗室', '後果', '推演'] },
+      { id: 'node_20', islandId: 'decision', grade: 4, gradeBand: 'mid', gradeLabel: '四年級', title: '四年級-決策思考大挑戰', subtitle: '價值星盤鐘樓｜區分價值觀與優先順序、學生/諮詢師回饋圈與對話交流站', icon: '🕰️', pos: getHexRingPos('decision', 3), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E5%9B%9B%E5%B9%B4%E7%B4%9A-%E6%B1%BA%E7%AD%96%E6%80%9D%E8%80%83%E5%A4%A7%E6%8C%91%E6%88%B0`, desc: '【核心理念】區分個人核心「價值觀」與當下「優先考慮的事」，能幫助我們在面臨抉擇時釐清真正重要的方向，做出負責任的評估與選擇。\n【教學目標】帶領四年級學童重點練習「評估與選擇」，透過製作「學生／諮詢師回饋圈」圖表進行換位建議，並參與「對話交流站」討論彼此的價值觀與進行分鏡對話演練。', toolType: 'default', archStyle: 'spire', tags: ['四年級', '決策思考大挑戰', '價值觀', '優先順序', '回饋圈', '對話交流站'] },
+      { id: 'node_29', islandId: 'decision', grade: 5, gradeBand: 'high', gradeLabel: '五年級', title: '五年級-生命好舵手', subtitle: '領航羅盤觀測台｜決策五步驟（發現問題、分析現況、尋求方案、評估選擇、事後反思）與價值權衡', icon: '☸️', pos: getHexRingPos('decision', 4), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E4%BA%94%E5%B9%B4%E7%B4%9A-%E7%94%9F%E5%91%BD%E5%A5%BD%E8%88%B5%E6%89%8B`, desc: '【核心理念】負責任的決策不僅考量個人得失，更需以道德良知、社會規範與群體福祉為羅盤，並運用系統化的「決策五步驟」為自己的生命穩健領航。\n【教學目標】熟練運用「決策五步驟（1.發現問題 ➔ 2.分析現況 ➔ 3.尋求方案 ➔ 4.評估選擇 ➔ 5.事後反思）」，探討網路言論責任、同儕盲從與誠信兩難情境，引導五年級學童緊握安全與品格羅盤，當自己生命的「好舵手」，做出利己又利他的負責任選擇。', toolType: 'default', archStyle: 'tower', tags: ['五年級', '生命好舵手', '決策五步驟', '價值觀', '負責'] },
+      { id: 'node_30', islandId: 'decision', grade: 6, gradeBand: 'high', gradeLabel: '六年級', title: '六年級-思辨與決策', subtitle: '智慧溫馨思辨控制台｜道德兩難議題之多維度立場論證與公共參與', icon: '🏛️', pos: getHexRingPos('decision', 5), url: `${BASE_SITE_URL}/%E8%B2%A0%E8%B2%AC%E4%BB%BB%E7%9A%84%E6%B1%BA%E7%AD%96/%E5%85%AD%E5%B9%B4%E7%B4%9A-%E6%80%9D%E8%BE%A8%E8%88%87%E6%B1%BA%E7%AD%96`, desc: '【核心理念】在沒有標準答案的複雜世界裡，具備批判性思辨與倫理關懷才能做出具建設性的公共決策。\n【教學目標】運用「生活與社會思辨控制台」，針對校園規範、科技倫理與社會兩難議題進行「完全同意／部分同意／不同意」的多維度論證分析，培養獨立思辨與公民責任感。', toolType: 'default', archStyle: 'crystal', tags: ['六年級', '思辨與決策', '思辨控制台', '道德困境', '做決定'] }
     ];
 
     const RESONANCE_LINES = [
-      { id: 'L01', from: 'node_01', to: 'node_05', title: '低年級：情緒報到 ➔ CBS呼吸控制', desc: '一年級先在「情緒報到」覺察心情，立刻連通「厲害的控制家」啟ങ്ക്動數、呼、擠呼吸法。' },
+      { id: 'L01', from: 'node_01', to: 'node_05', title: '低年級：情緒報到 ➔ CBS呼吸控制', desc: '一年級先在「情緒報到」覺察心情，立刻連通「厲害的控制家」啟動數、呼、擠呼吸法。' },
       { id: 'L02', from: 'node_03', to: 'node_07', title: '中年級：情緒溫度計 ➔ 小超人剎車', desc: '三年級透過「情緒溫度計」發現怒氣升溫時，連通「我是小超人」踩下 5 秒衝動剎車。' },
       { id: 'L03', from: 'node_02', to: 'node_10', title: '低年級：心情檢查站 ➔ 社交小雷達', desc: '二年級在「情緒百寶箱」看懂自己的感受後，更能開啟「社交小雷達」體察同學的情緒。' },
       { id: 'L04', from: 'node_04', to: 'node_16', title: '中年級：覺察日記 ➔ 班級協商冒險', desc: '四年級藉由「我的覺察日記」釐清內心想法，在「班級協商冒險島」理性表達共識。' },
       { id: 'L05', from: 'node_08', to: 'node_27', title: '中高年級：超級計畫 ➔ 五之神探險隊', desc: '個人的「超級計畫」時間自律，是五年級「五之神探險隊」拼圖合作教學成功的基石。' },
       { id: 'L06', from: 'node_11', to: 'node_15', title: '三年級：小小觀察家 ➔ 人際魔法和平圈', desc: '透過「小小觀察家」換位思考，才能在「人際互動魔法島」的和平圈中真誠傾聽彼此。' },
-      { id: 'L07', from: 'node_12', to: 'node_20', title: '四年級：社會偵探任務 ➔ 決策五步挑戰', desc: '完成「社會偵探任務」看見群體需求，引導「決策思考大挑戰」兼顧眾人福祉。' },
-      { id: 'L08', from: 'node_23', to: 'node_29', title: '五年級：90秒超能力基地 ➔ 生命好舵手', desc: '掌握「超能力基地」90 秒情緒生理調節，才能在風浪中穩健當個「生命好舵手」。' },
+      { id: 'L07', from: 'node_12', to: 'node_20', title: '四年級：社會偵探任務 ➔ 決策思考大挑戰', desc: '完成「社會偵探任務」理解他人動機與感受後，在「決策思考大挑戰」透過學生/諮詢師回饋圈與對話交流站釐清價值觀與優先順序。' },
+      { id: 'L08', from: 'node_23', to: 'node_29', title: '五年級：90秒超能力基地 ➔ 生命好舵手', desc: '掌握「超能力基地」90 秒情緒生理調節，才能在「生命好舵手」完整運用決策五步驟（發現問題、分析現況、尋求方案、評估選擇、事後反思）穩健領航。' },
       { id: 'L09', from: 'node_26', to: 'node_28', title: '六年級：我能讀懂你 ➔ 衝突協商大師', desc: '具備「我能讀懂你」的深度同理心，才能在「衝突協商與人際大師」診所中完成修復式對話。' },
       { id: 'L10', from: 'node_22', to: 'node_30', title: '六年級：內省自信行動 ➔ 思辨與決策控制台', desc: '六年級錨定「內省與自信行動」價值觀，在「思辨與決策控制台」面對兩難議題提出周延論證。' }
     ];
@@ -781,35 +790,62 @@
     function createFloatingSkyIsland(cfg) {
       const group = new THREE.Group();
       const radius = cfg.radius;
-      const topCapGeo = new THREE.CylinderGeometry(radius * 0.97, radius, 0.65, 6);
+      const topCapGeo = new THREE.CylinderGeometry(radius * 0.97, radius, 0.65, 12);
       const topCapMat = new THREE.MeshLambertMaterial({ color: cfg.groundColor, flatShading: true });
       const topCap = new THREE.Mesh(topCapGeo, topCapMat); topCap.position.y = 0.88; topCap.receiveShadow = true; topCap.castShadow = true; group.add(topCap);
-      const innerTurfGeo = new THREE.CylinderGeometry(radius * 0.84, radius * 0.92, 0.22, 12);
+      const innerTurfGeo = new THREE.CylinderGeometry(radius * 0.84, radius * 0.92, 0.24, 16);
       const innerTurfMat = new THREE.MeshLambertMaterial({ color: cfg.turfColor || 0x22c55e, flatShading: true });
       const innerTurf = new THREE.Mesh(innerTurfGeo, innerTurfMat); innerTurf.position.y = 1.15; innerTurf.receiveShadow = true; group.add(innerTurf);
+
+      // 精緻化：島嶼外圍黃金能量光環與幾何裝飾邊框
+      const haloGeo = new THREE.TorusGeometry(radius * 0.96, 0.08, 6, 36);
+      const haloMat = new THREE.MeshLambertMaterial({ color: 0xfef08a, emissive: cfg.color, emissiveIntensity: 0.35, flatShading: true });
+      const haloRing = new THREE.Mesh(haloGeo, haloMat);
+      haloRing.rotation.x = Math.PI / 2;
+      haloRing.position.y = 1.16;
+      group.add(haloRing);
+
       for (let e = 0; e < 6; e++) {
         const edgeAng = (e * Math.PI) / 3 + Math.PI / 6;
         const turfLedge = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.55, 0.38, 0.65), innerTurfMat);
         turfLedge.position.set(Math.cos(edgeAng) * (radius * 0.86), 0.75, Math.sin(edgeAng) * (radius * 0.86)); turfLedge.rotation.y = -edgeAng + Math.PI / 2; group.add(turfLedge);
       }
-      const rimGeo = new THREE.CylinderGeometry(radius, radius * 0.95, 0.68, 6);
+      const rimGeo = new THREE.CylinderGeometry(radius, radius * 0.95, 0.68, 12);
       const rimMat = new THREE.MeshLambertMaterial({ color: cfg.color, flatShading: true });
       const rimMesh = new THREE.Mesh(rimGeo, rimMat); rimMesh.position.y = 0.22; rimMesh.receiveShadow = true; group.add(rimMesh);
+
+      // 精緻化：中層岩石過渡帶 (Strata Layer)
+      const midStrataGeo = new THREE.CylinderGeometry(radius * 0.93, radius * 0.78, 1.2, 9);
+      const midStrataMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8, flatShading: true });
+      const midStrata = new THREE.Mesh(midStrataGeo, midStrataMat);
+      midStrata.position.y = -0.6;
+      group.add(midStrata);
+
       populateGrassMeadowOnIsland(cfg, group, radius);
-      const cliffGeo = new THREE.ConeGeometry(radius * 0.92, 7.5, 6);
+      const cliffGeo = new THREE.ConeGeometry(radius * 0.88, 7.8, 8);
       const cliffMat = new THREE.MeshLambertMaterial({ color: cfg.cliffColor, flatShading: true });
-      const cliffMesh = new THREE.Mesh(cliffGeo, cliffMat); cliffMesh.rotation.x = Math.PI; cliffMesh.position.y = -3.9; cliffMesh.receiveShadow = true; group.add(cliffMesh);
-      for (let i = 0; i < 3; i++) {
-        const subAngle = (i * 2 * Math.PI) / 3 + 0.4;
-        const subCone = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.35, 4.8, 5), cliffMat); subCone.rotation.x = Math.PI; subCone.position.set(Math.cos(subAngle) * (radius * 0.45), -2.8, Math.sin(subAngle) * (radius * 0.45)); group.add(subCone);
+      const cliffMesh = new THREE.Mesh(cliffGeo, cliffMat); cliffMesh.rotation.x = Math.PI; cliffMesh.position.y = -4.2; cliffMesh.receiveShadow = true; group.add(cliffMesh);
+      for (let i = 0; i < 4; i++) {
+        const subAngle = (i * 2 * Math.PI) / 4 + 0.4;
+        const subCone = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.36, 5.2, 6), cliffMat); subCone.rotation.x = Math.PI; subCone.position.set(Math.cos(subAngle) * (radius * 0.48), -3.1, Math.sin(subAngle) * (radius * 0.48)); group.add(subCone);
       }
-      const satMat = new THREE.MeshLambertMaterial({ color: cfg.color, flatShading: true });
-      for (let s = 0; s < 2; s++) {
-        const sat = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), satMat); const ang = s * Math.PI + 0.8; sat.position.set(Math.cos(ang) * (radius + 1.8), -1.2 + s * 1.5, Math.sin(ang) * (radius + 1.8)); group.add(sat);
+
+      // 精緻化：底部發光浮空礦晶與衛星浮石
+      const satMat = new THREE.MeshLambertMaterial({ color: cfg.color, emissive: cfg.color, emissiveIntensity: 0.25, flatShading: true });
+      for (let s = 0; s < 4; s++) {
+        const sat = new THREE.Mesh(new THREE.OctahedronGeometry(0.65 + (s % 2) * 0.2, 0), satMat);
+        const ang = (s * Math.PI) / 2 + 0.5;
+        sat.position.set(Math.cos(ang) * (radius + 1.6), -1.0 + (s % 2) * 1.4, Math.sin(ang) * (radius + 1.6));
+        group.add(sat);
       }
+      const bottomCrystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.95, 0), satMat);
+      bottomCrystal.scale.set(0.7, 1.8, 0.7);
+      bottomCrystal.position.set(0, -8.2, 0);
+      group.add(bottomCrystal);
+
       const vineMat = new THREE.MeshLambertMaterial({ color: 0x15803d, flatShading: true });
-      for (let v = 0; v < 8; v++) {
-        const vAng = (v * Math.PI) / 4 + 0.2; const vineLen = 1.6 + (v % 3) * 0.7;
+      for (let v = 0; v < 10; v++) {
+        const vAng = (v * Math.PI) / 5 + 0.2; const vineLen = 1.6 + (v % 3) * 0.75;
         const vine = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.04, vineLen, 4), vineMat); vine.position.set(Math.cos(vAng) * (radius * 0.92), 0.3 - vineLen / 2, Math.sin(vAng) * (radius * 0.92)); group.add(vine);
       }
       buildIslandHeroAndFlora(cfg, group);
@@ -1024,23 +1060,133 @@
     function createMicroLandmarkMesh(archStyle, grade, borderHex) {
       const g = new THREE.Group();
       const roofColor = grade <= 2 ? 0x0284c7 : grade <= 4 ? 0xd97706 : 0x4f46e5;
+      const accentColor = grade <= 2 ? 0x38bdf8 : grade <= 4 ? 0xfbbf24 : 0x818cf8;
+      const stoneMat = new THREE.MeshLambertMaterial({ color: 0xf8fafc, flatShading: true });
+      const woodMat = new THREE.MeshLambertMaterial({ color: 0x92400e, flatShading: true });
+      const roofMat = new THREE.MeshLambertMaterial({ color: roofColor, flatShading: true });
+      const accentMat = new THREE.MeshLambertMaterial({ color: accentColor, emissive: accentColor, emissiveIntensity: 0.2, flatShading: true });
+      const winMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+
+      // 精緻雙層石造基座 (所有地標共用)
+      const plinth1 = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.28, 0.16, 8), new THREE.MeshLambertMaterial({ color: 0xcbd5e1, flatShading: true }));
+      plinth1.position.y = 0.08;
+      plinth1.receiveShadow = true;
+      const plinth2 = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 1.12, 0.14, 8), stoneMat);
+      plinth2.position.y = 0.22;
+      plinth2.receiveShadow = true;
+      g.add(plinth1, plinth2);
+
       if (archStyle === 'windmill') {
-        const mill = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.85, 2.0, 8), new THREE.MeshLambertMaterial({ color: 0xfffbeb, flatShading: true })); mill.position.y = 1.0; g.add(mill);
-        const roof = new THREE.Mesh(new THREE.ConeGeometry(0.85, 0.8, 8), new THREE.MeshLambertMaterial({ color: roofColor, flatShading: true })); roof.position.y = 2.3; g.add(roof);
-        const bladeGroup = new THREE.Group(); bladeGroup.position.set(0, 1.9, 0.65);
-        for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.35, 0.04), new THREE.MeshLambertMaterial({ color: 0xfef08a })); b.rotation.z = (Math.PI / 2) * i; bladeGroup.add(b); }
-        bladeGroup.userData = { isRotatingBlades: true }; g.add(bladeGroup);
+        const mill = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.82, 1.9, 8), new THREE.MeshLambertMaterial({ color: 0xfffbeb, flatShading: true }));
+        mill.position.y = 1.15; mill.castShadow = true; g.add(mill);
+        const balcony = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.78, 0.1, 8), woodMat);
+        balcony.position.y = 1.25; g.add(balcony);
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(0.78, 0.85, 8), roofMat);
+        roof.position.y = 2.45; roof.castShadow = true; g.add(roof);
+        const door = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.5, 0.12), woodMat);
+        door.position.set(0, 0.52, 0.76); g.add(door);
+        const bladeGroup = new THREE.Group();
+        bladeGroup.position.set(0, 2.0, 0.65);
+        const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.25, 6), woodMat);
+        hub.rotation.x = Math.PI / 2; bladeGroup.add(hub);
+        for (let i = 0; i < 4; i++) {
+          const b = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.45, 0.04), new THREE.MeshLambertMaterial({ color: 0xfef08a }));
+          b.rotation.z = (Math.PI / 2) * i; bladeGroup.add(b);
+        }
+        bladeGroup.userData = { isRotatingBlades: true };
+        g.add(bladeGroup);
       } else if (archStyle === 'crystal') {
-        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 0.4, 6), new THREE.MeshLambertMaterial({ color: 0xe2e8f0, flatShading: true })); base.position.y = 0.2; g.add(base);
-        const crystal = new THREE.Mesh(new THREE.ConeGeometry(0.65, 2.2, 5), new THREE.MeshLambertMaterial({ color: roofColor, flatShading: true })); crystal.position.y = 1.4; g.add(crystal);
+        const ringBase = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.92, 0.35, 6), stoneMat);
+        ringBase.position.y = 0.45; g.add(ringBase);
+        const mainCrystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.62, 0), accentMat);
+        mainCrystal.scale.set(0.85, 2.1, 0.85);
+        mainCrystal.position.y = 1.65; mainCrystal.castShadow = true; g.add(mainCrystal);
+        for (let i = 0; i < 3; i++) {
+          const ang = (i * 2 * Math.PI) / 3 + 0.3;
+          const subC = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.95, 5), roofMat);
+          subC.position.set(Math.cos(ang) * 0.58, 0.9, Math.sin(ang) * 0.58);
+          subC.rotation.z = (i % 2 === 0 ? 1 : -1) * 0.28;
+          g.add(subC);
+        }
+      } else if (archStyle === 'dome') {
+        const wall = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.85, 1.05, 10), stoneMat);
+        wall.position.y = 0.8; wall.castShadow = true; g.add(wall);
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(0.8, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), roofMat);
+        dome.position.y = 1.3; dome.castShadow = true; g.add(dome);
+        const telescope = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.85, 6), new THREE.MeshLambertMaterial({ color: 0xfbbf24, flatShading: true }));
+        telescope.position.set(0, 1.85, 0.42);
+        telescope.rotation.x = Math.PI / 3; g.add(telescope);
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.12), winMat);
+        win.position.set(0, 0.8, 0.82); g.add(win);
+      } else if (archStyle === 'pavilion') {
+        for (let i = 0; i < 4; i++) {
+          const ang = (i * Math.PI) / 2 + Math.PI / 4;
+          const col = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.15, 6), woodMat);
+          col.position.set(Math.cos(ang) * 0.65, 0.85, Math.sin(ang) * 0.65);
+          col.castShadow = true; g.add(col);
+        }
+        const lantern = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), winMat);
+        lantern.position.y = 1.15; g.add(lantern);
+        const roof1 = new THREE.Mesh(new THREE.ConeGeometry(1.12, 0.55, 4), roofMat);
+        roof1.position.y = 1.6; roof1.rotation.y = Math.PI / 4; roof1.castShadow = true; g.add(roof1);
+        const roof2 = new THREE.Mesh(new THREE.ConeGeometry(0.78, 0.5, 4), roofMat);
+        roof2.position.y = 2.02; roof2.rotation.y = Math.PI / 4; g.add(roof2);
+      } else if (archStyle === 'spire' || archStyle === 'tower') {
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.72, 1.65, 6), stoneMat);
+        body.position.y = 1.1; body.castShadow = true; g.add(body);
+        const midRing = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.68, 0.14, 6), accentMat);
+        midRing.position.y = 1.35; g.add(midRing);
+        const spire = new THREE.Mesh(new THREE.ConeGeometry(0.68, 1.15, 6), roofMat);
+        spire.position.y = 2.45; spire.castShadow = true; g.add(spire);
+        const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.2, 0), winMat);
+        star.position.y = 3.15; g.add(star);
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.42, 0.1), winMat);
+        win.position.set(0, 0.95, 0.62); g.add(win);
+      } else if (archStyle === 'fountain') {
+        const basin = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.82, 0.42, 10), stoneMat);
+        basin.position.y = 0.5; g.add(basin);
+        const water = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.1, 10), new THREE.MeshLambertMaterial({ color: 0x38bdf8, flatShading: true }));
+        water.position.y = 0.68; g.add(water);
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 1.0, 8), stoneMat);
+        pillar.position.y = 1.15; g.add(pillar);
+        const topBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.25, 0.28, 8), roofMat);
+        topBowl.position.y = 1.68; g.add(topBowl);
+        const drop = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), accentMat);
+        drop.position.y = 2.1; g.add(drop);
+      } else if (archStyle === 'steps') {
+        [0.95, 0.72, 0.48].forEach((sz, idx) => {
+          const stepBox = new THREE.Mesh(new THREE.BoxGeometry(sz * 1.6, 0.42, sz * 1.6), idx % 2 === 0 ? stoneMat : roofMat);
+          stepBox.position.y = 0.5 + idx * 0.42;
+          stepBox.castShadow = true; g.add(stepBox);
+        });
+        const shrine = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), winMat);
+        shrine.position.y = 1.95; g.add(shrine);
       } else if (archStyle === 'tree') {
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.6, 1.4, 6), new THREE.MeshLambertMaterial({ color: 0x78350f, flatShading: true })); trunk.position.y = 0.7; g.add(trunk);
-        const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(1.15), new THREE.MeshLambertMaterial({ color: 0x16a34a, flatShading: true })); crown.position.y = 1.9; g.add(crown);
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.58, 1.45, 7), woodMat);
+        trunk.position.y = 0.95; trunk.castShadow = true; g.add(trunk);
+        const house = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.6, 0.75), new THREE.MeshLambertMaterial({ color: 0xfef3c7, flatShading: true }));
+        house.position.set(0.25, 1.45, 0.25); g.add(house);
+        const crown1 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.05, 0), new THREE.MeshLambertMaterial({ color: 0x16a34a, flatShading: true }));
+        crown1.position.y = 2.15; crown1.castShadow = true; g.add(crown1);
+        const crown2 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.75, 0), new THREE.MeshLambertMaterial({ color: 0x4ade80, flatShading: true }));
+        crown2.position.set(-0.45, 1.85, 0.35); g.add(crown2);
       } else if (archStyle === 'bridge') {
-        const arch = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.24, 6, 12, Math.PI), new THREE.MeshLambertMaterial({ color: 0xea580c, flatShading: true })); arch.position.y = 0.5; g.add(arch);
+        const arch = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.22, 6, 14, Math.PI), roofMat);
+        arch.position.y = 0.32; arch.castShadow = true; g.add(arch);
+        const pL = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 1.2, 6), stoneMat);
+        pL.position.set(-0.88, 0.85, 0);
+        const pR = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 1.2, 6), stoneMat);
+        pR.position.set(0.88, 0.85, 0);
+        const heart = new THREE.Mesh(new THREE.OctahedronGeometry(0.26, 0), winMat);
+        heart.position.y = 1.58;
+        g.add(pL, pR, heart);
       } else {
-        const base = new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.1, 1.25), new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true })); base.position.y = 0.55; g.add(base);
-        const roof = new THREE.Mesh(new THREE.ConeGeometry(1.05, 1.0, 6), new THREE.MeshLambertMaterial({ color: roofColor, flatShading: true })); roof.position.y = 1.6; g.add(roof);
+        const base = new THREE.Mesh(new THREE.BoxGeometry(1.15, 1.05, 1.15), stoneMat);
+        base.position.y = 0.8; base.castShadow = true; g.add(base);
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(1.02, 0.95, 6), roofMat);
+        roof.position.y = 1.78; roof.castShadow = true; g.add(roof);
+        const win = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.1), winMat);
+        win.position.set(0, 0.85, 0.56); g.add(win);
       }
       return g;
     }
@@ -1130,7 +1276,7 @@
       if (avatarLabelObj && avatarLabelObj.el) { avatarLabelObj.el.innerHTML = `<span>${cfg.icon}</span><span>${cfg.role}</span>`; }
       const descEl = document.getElementById('avatar-outfit-desc'); if (descEl) descEl.textContent = cfg.outfitShort;
       const badgeEl = document.getElementById('avatar-icon-badge');
-      if (badgeEl) { badgeEl.textContent = cfg.icon; badgeEl.className = `w-10 h-10 rounded-full bg-gradient-to-tr ${cfg.badgeGradient} flex items-center justify-center text-lg shadow-md`; }
+      if (badgeEl) { badgeEl.textContent = cfg.icon; badgeEl.className = `w-7 h-7 rounded-full bg-gradient-to-tr ${cfg.badgeGradient} flex items-center justify-center text-xs shadow-md`; }
       const roleLabelEl = document.getElementById('avatar-role-label'); if (roleLabelEl) roleLabelEl.textContent = cfg.role;
     }
 
@@ -1177,13 +1323,12 @@
       const orderedIslands = ['self_awareness', 'self_management', 'social_awareness', 'relationship', 'decision'];
       const coreCfg = ISLAND_CONFIG.inner_lake;
       let html = `
-        <div class="rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-white to-sky-50 p-3 shadow-sm space-y-1.5">
-          <div class="flex items-center justify-between"><span class="text-xs font-black text-amber-900 flex items-center gap-1">🏰 ${coreCfg.name}</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 font-bold">總覽中心</span></div>
-          <p class="text-[11px] text-slate-600 leading-relaxed">${coreCfg.desc}</p>
-          <div class="flex gap-1.5 pt-1">
-            <a href="${BASE_SITE_URL}" target="_blank" rel="noopener noreferrer" class="flex-1 py-1.5 px-2 rounded-xl bg-white hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-[11px] text-center transition">🌐 漚汪 SEL 首頁 ↗</a>
-            <a href="${coreCfg.url}" target="_blank" rel="noopener noreferrer" class="flex-1 py-1.5 px-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] text-center shadow-sm transition">📋 課程學習架構 ↗</a>
+        <div class="rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50/80 to-sky-50/80 p-3 shadow-sm cursor-pointer hover:border-amber-400 transition dir-island-header" data-island="inner_lake">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-black text-slate-900">🏰 ${coreCfg.name}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold">總覽</span>
           </div>
+          <div class="text-[10px] text-amber-900 font-semibold mt-1 truncate">${coreCfg.heroName}</div>
         </div>
       `;
       orderedIslands.forEach(islandId => {
@@ -1327,7 +1472,7 @@
       }
       document.querySelectorAll('.nav-island-btn').forEach(btn => {
         const match = btn.dataset.island === islandId;
-        btn.className = match ? 'nav-island-btn px-3 py-1.5 rounded-xl text-xs font-bold transition bg-indigo-600 text-white shadow-sm' : 'nav-island-btn px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition';
+        btn.className = match ? 'nav-island-btn px-2 sm:px-3 py-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition bg-indigo-600 text-white shadow-sm whitespace-nowrap' : 'nav-island-btn px-2 sm:px-3 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold text-slate-700 hover:bg-slate-100 transition whitespace-nowrap';
       });
     }
 
